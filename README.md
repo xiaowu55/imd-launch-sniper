@@ -76,6 +76,21 @@ v4 PoolManager 的共用 ETH 余额不是单池储备。独立池储备证明尚
 
 API 基线与处理记录跨重启保留；启动前已部署的币，包括停机期间发行，会跳过。修改筛选设置不会重新购买曾跳过的历史项目。
 
+## Sepolia 真实交易测试
+
+独立命令可在公共 Sepolia 网络验证真实买入，复用官方 API 发射核验与 v4 交易编码。它不修改主网控制台配置，也不读取主网 `.env` 钱包。测试网钱包和一次性交易记录保存在被 Git 忽略的 `runtime/testnet/`。
+
+```sh
+npm run testnet -- prepare cd74e008-6a11-47be-b242-012cc4529697
+npm run testnet -- status
+# 公开地址收到免费的 Sepolia ETH 后，发送一次真实测试网买入：
+npm run testnet -- buy cd74e008-6a11-47be-b242-012cc4529697
+```
+
+测试命令固定链 ID 为 `11155111`，买入金额为 `0.0001` Sepolia ETH，滑点为 1%，最高 Gas 预算为 `0.002` Sepolia ETH。不要向测试地址转入主网资产。发射证据读取优先使用 Sentio：本次检查中 PublicNode 的历史合约代码查询失败，但当前区块报价可用。
+
+该命令购买指定的已上线测试代币，验证 API 核验、报价、签名、广播及到账；不能证明“新币一出现就买到”或主网成交速度。详细结果见 [测试网运行记录](docs/TESTNET_RUN.md)。
+
 ## 代码验证与审计
 
 ```sh
@@ -87,4 +102,4 @@ npm audit
 
 自动化测试使用隔离目录、假 RPC 和固定测试密钥验证代码，不发真实交易。产品运行路径仅实盘。公开仓库包含 CI、[审计报告](docs/SECURITY_AUDIT.md) 与 [安全边界](SECURITY.md)。
 
-`docs/evidence/` 是早期测试网研究的历史记录，不代表本版曾在主网成交。官方资料见 [IMD 文档](https://imd.fun/docs/) 和 [研究记录](docs/RESEARCH.md)。
+`docs/evidence/` 包含早期研究记录和 2026-09-29 的 Sepolia 真实买入回执；不代表本版曾在主网成交。官方资料见 [IMD 文档](https://imd.fun/docs/) 和 [研究记录](docs/RESEARCH.md)。
