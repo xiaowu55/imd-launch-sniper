@@ -1,0 +1,365 @@
+{
+  "startedAt": "2026-09-29T06:14:22.083Z",
+  "finishedAt": "2026-09-29T06:15:55.765Z",
+  "mode": "READ_ONLY_OFFICIAL_API_LATENCY",
+  "method": "GET, no cache-busting parameters, no Cache-Control overrides; three sources fetched concurrently each round, four rounds; after each complete round wait the largest observed max-age or 10 seconds, whichever is greater. Node native fetch in a single process (pooled connections), 15-second request timeout, maximum 4 MiB body.",
+  "timingDefinitions": {
+    "responseHeadersMs": "Elapsed monotonic time from fetch invocation until response headers become available; a client-side TTFB approximation, including DNS/TLS/connect when required.",
+    "firstBodyChunkMs": "Elapsed monotonic time until the first response body chunk is available in this process.",
+    "completeDownloadMs": "Elapsed monotonic time until the full body is consumed; excludes JSON parsing."
+  },
+  "limitations": [
+    "Four requests per resource describe only this machine and measurement window.",
+    "Cache max-age is a cache freshness directive, not a measured indexing or launch-exposure delay.",
+    "A historical Sepolia detail is used only to measure API request timing; this is not a mainnet launch or trading test.",
+    "No wallet, simulation, signature, or transaction broadcast is involved.",
+    "Thirty-second inter-round gaps may exceed HTTP keep-alive idle limits; connection reuse was not instrumented, so these timings are not labelled warm-connection measurements."
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "waitAfterMs": 30000,
+      "samples": [
+        {
+          "round": 1,
+          "role": "launch-list",
+          "url": "https://api.imd.fun/launches?limit=500",
+          "startedAt": "2026-09-29T06:14:22.084Z",
+          "responseHeadersMs": 458.71,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=10",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:14:22 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "141459"
+          },
+          "firstBodyChunkMs": 463.29,
+          "completeDownloadMs": 646.46,
+          "bodyBytes": 141459,
+          "ok": true,
+          "launchCount": 166,
+          "mainnetLiveCount": 0,
+          "mainnetTotalCount": 10
+        },
+        {
+          "round": 1,
+          "role": "known-sepolia-detail",
+          "url": "https://api.imd.fun/launches/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:14:22.124Z",
+          "responseHeadersMs": 490.43,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=30",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:14:22 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "75273"
+          },
+          "firstBodyChunkMs": 492.62,
+          "completeDownloadMs": 618.39,
+          "bodyBytes": 75273,
+          "ok": true,
+          "chainId": 11155111,
+          "launchStatus": "live",
+          "launchNumber": 426
+        },
+        {
+          "round": 1,
+          "role": "known-sepolia-reads",
+          "url": "https://api.imd.fun/reads/launch/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:14:22.124Z",
+          "responseHeadersMs": 414.41,
+          "status": 200,
+          "headers": {
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:14:22 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "5596"
+          },
+          "firstBodyChunkMs": 415.27,
+          "completeDownloadMs": 417.52,
+          "bodyBytes": 5596,
+          "ok": true,
+          "fileCount": 2
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "waitAfterMs": 30000,
+      "samples": [
+        {
+          "round": 2,
+          "role": "launch-list",
+          "url": "https://api.imd.fun/launches?limit=500",
+          "startedAt": "2026-09-29T06:14:52.745Z",
+          "responseHeadersMs": 474.38,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=10",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:14:53 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "141459"
+          },
+          "firstBodyChunkMs": 550.91,
+          "completeDownloadMs": 872.06,
+          "bodyBytes": 141459,
+          "ok": true,
+          "launchCount": 166,
+          "mainnetLiveCount": 0,
+          "mainnetTotalCount": 10
+        },
+        {
+          "round": 2,
+          "role": "known-sepolia-detail",
+          "url": "https://api.imd.fun/launches/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:14:52.749Z",
+          "responseHeadersMs": 546.09,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=30",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:14:53 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "75273"
+          },
+          "firstBodyChunkMs": 556.16,
+          "completeDownloadMs": 1157.28,
+          "bodyBytes": 75273,
+          "ok": true,
+          "chainId": 11155111,
+          "launchStatus": "live",
+          "launchNumber": 426
+        },
+        {
+          "round": 2,
+          "role": "known-sepolia-reads",
+          "url": "https://api.imd.fun/reads/launch/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:14:52.751Z",
+          "responseHeadersMs": 478.69,
+          "status": 200,
+          "headers": {
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:14:53 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "5596"
+          },
+          "firstBodyChunkMs": 479.26,
+          "completeDownloadMs": 480.22,
+          "bodyBytes": 5596,
+          "ok": true,
+          "fileCount": 2
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "waitAfterMs": 30000,
+      "samples": [
+        {
+          "round": 3,
+          "role": "launch-list",
+          "url": "https://api.imd.fun/launches?limit=500",
+          "startedAt": "2026-09-29T06:15:23.910Z",
+          "responseHeadersMs": 556.17,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=10",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:15:24 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "141459"
+          },
+          "firstBodyChunkMs": 557.52,
+          "completeDownloadMs": 1224.05,
+          "bodyBytes": 141459,
+          "ok": true,
+          "launchCount": 166,
+          "mainnetLiveCount": 0,
+          "mainnetTotalCount": 10
+        },
+        {
+          "round": 3,
+          "role": "known-sepolia-detail",
+          "url": "https://api.imd.fun/launches/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:15:23.915Z",
+          "responseHeadersMs": 571.92,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=30",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:15:24 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "75273"
+          },
+          "firstBodyChunkMs": 739.57,
+          "completeDownloadMs": 931.49,
+          "bodyBytes": 75273,
+          "ok": true,
+          "chainId": 11155111,
+          "launchStatus": "live",
+          "launchNumber": 426
+        },
+        {
+          "round": 3,
+          "role": "known-sepolia-reads",
+          "url": "https://api.imd.fun/reads/launch/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:15:23.917Z",
+          "responseHeadersMs": 487.66,
+          "status": 200,
+          "headers": {
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:15:24 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "5596"
+          },
+          "firstBodyChunkMs": 563.15,
+          "completeDownloadMs": 563.31,
+          "bodyBytes": 5596,
+          "ok": true,
+          "fileCount": 2
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "waitAfterMs": 0,
+      "samples": [
+        {
+          "round": 4,
+          "role": "launch-list",
+          "url": "https://api.imd.fun/launches?limit=500",
+          "startedAt": "2026-09-29T06:15:55.138Z",
+          "responseHeadersMs": 427.34,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=10",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:15:55 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "141459"
+          },
+          "firstBodyChunkMs": 427.85,
+          "completeDownloadMs": 625.85,
+          "bodyBytes": 141459,
+          "ok": true,
+          "launchCount": 166,
+          "mainnetLiveCount": 0,
+          "mainnetTotalCount": 10
+        },
+        {
+          "round": 4,
+          "role": "known-sepolia-detail",
+          "url": "https://api.imd.fun/launches/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:15:55.143Z",
+          "responseHeadersMs": 412.63,
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=30",
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:15:55 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "75273"
+          },
+          "firstBodyChunkMs": 415.06,
+          "completeDownloadMs": 546.1,
+          "bodyBytes": 75273,
+          "ok": true,
+          "chainId": 11155111,
+          "launchStatus": "live",
+          "launchNumber": 426
+        },
+        {
+          "round": 4,
+          "role": "known-sepolia-reads",
+          "url": "https://api.imd.fun/reads/launch/01479536-860f-40ea-bfa5-79eace1533ef",
+          "startedAt": "2026-09-29T06:15:55.144Z",
+          "responseHeadersMs": 424.06,
+          "status": 200,
+          "headers": {
+            "vary": "accept-encoding",
+            "date": "Tue, 29 Sep 2026 06:15:55 GMT",
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "5596"
+          },
+          "firstBodyChunkMs": 424.5,
+          "completeDownloadMs": 425.24,
+          "bodyBytes": 5596,
+          "ok": true,
+          "fileCount": 2
+        }
+      ]
+    }
+  ],
+  "summary": [
+    {
+      "role": "launch-list",
+      "url": "https://api.imd.fun/launches?limit=500",
+      "samples": 4,
+      "successful": 4,
+      "responseHeadersMs": {
+        "p50": 458.71,
+        "p95": 556.17
+      },
+      "completeDownloadMs": {
+        "p50": 646.46,
+        "p95": 1224.05
+      },
+      "cacheControl": [
+        "public, max-age=10"
+      ],
+      "cacheStatus": [
+        null
+      ],
+      "mainnetLiveCounts": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "role": "known-sepolia-detail",
+      "url": "https://api.imd.fun/launches/01479536-860f-40ea-bfa5-79eace1533ef",
+      "samples": 4,
+      "successful": 4,
+      "responseHeadersMs": {
+        "p50": 490.43,
+        "p95": 571.92
+      },
+      "completeDownloadMs": {
+        "p50": 618.39,
+        "p95": 1157.28
+      },
+      "cacheControl": [
+        "public, max-age=30"
+      ],
+      "cacheStatus": [
+        null
+      ]
+    },
+    {
+      "role": "known-sepolia-reads",
+      "url": "https://api.imd.fun/reads/launch/01479536-860f-40ea-bfa5-79eace1533ef",
+      "samples": 4,
+      "successful": 4,
+      "responseHeadersMs": {
+        "p50": 424.06,
+        "p95": 487.66
+      },
+      "completeDownloadMs": {
+        "p50": 425.24,
+        "p95": 563.31
+      },
+      "cacheControl": [
+        null
+      ],
+      "cacheStatus": [
+        null
+      ]
+    }
+  ],
+  "percentileMethod": "Nearest rank: sorted[ceil(n*p)-1]; with n=4, p95 is the sample maximum and not a stable tail-latency estimate."
+}

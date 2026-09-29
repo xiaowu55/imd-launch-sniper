@@ -123,7 +123,15 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     if (options.signal?.aborted) fail("cancelled", "发射核验已停止", true);
     if (await client.getChainId() !== chainId)
       fail("wrong_chain", "RPC 与目标网络不一致");
-    const raw = await readJson(source);
+    // Both documents have fixed official URLs and are independent network reads.
+    // Settle both promises before validation so a rejected sibling cannot escape
+    // as an unhandled rejection; all existing identity checks still run below.
+    const [detailRead, filesRead] = await Promise.allSettled([
+      readJson(source),
+      readJson(`https://api.imd.fun/reads/launch/${encodeURIComponent(id)}`),
+    ]);
+    if (detailRead.status === "rejected") throw detailRead.reason;
+    const raw = detailRead.value;
     if (typeof raw !== "object" || raw === null) fail("invalid_detail", "官方发射详情格式尚不完整，等待重新读取", true);
     const pre = raw as Record<string, unknown>;
     if (pre.id == null || pre.chainId == null)
@@ -144,7 +152,8 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     const hook = hooks[0];
     if (hook && (!equal(hook.txHash, token.txHash) || hook.blockNumber !== token.blockNumber))
       fail("hook_transaction", "Hook 与代币不属于同一发射交易");
-    const readsResult = readsSchema.safeParse(await readJson(`https://api.imd.fun/reads/launch/${encodeURIComponent(id)}`));
+    if (filesRead.status === "rejected") throw filesRead.reason;
+    const readsResult = readsSchema.safeParse(filesRead.value);
     if (!readsResult.success) fail("invalid_reads", "官方部署文件列表尚不完整，等待重新读取", true);
     const file = (path: string): unknown => {
       const matches = readsResult.data.files.filter((f) => f.path === path);

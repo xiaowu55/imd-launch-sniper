@@ -1,0 +1,6380 @@
+{
+  "startedAt": "2026-09-29T06:17:57.188Z",
+  "finishedAt": "2026-09-29T06:20:39.727Z",
+  "mode": "READ_ONLY_MAINNET_BENCHMARK",
+  "schemaVersion": 2,
+  "fixedReference": {
+    "number": "26081285",
+    "hash": "0x48f1c2082e07f872de3f909c583c765a609f14dd86f356a1da3591905fb1dc86",
+    "logsHash": "0x0580e18b12cd9bb4e0c97de133c881e372f91245723d07ec80118e149a837ada"
+  },
+  "fixedStillCanonical": true,
+  "seconds": 120,
+  "pollIntervalMs": 1000,
+  "measurementStartMs": 1818.72,
+  "measurementEndMs": 121818.72,
+  "baseline": 26081277,
+  "endpoints": [
+    {
+      "name": "publicnode",
+      "http": "https://ethereum-rpc.publicnode.com",
+      "ws": "wss://ethereum-rpc.publicnode.com"
+    },
+    {
+      "name": "drpc",
+      "http": "https://eth.drpc.org",
+      "ws": "wss://eth.drpc.org"
+    }
+  ],
+  "wsSetup": [
+    {
+      "name": "publicnode",
+      "ok": true,
+      "connectMs": 330,
+      "readyMs": 573
+    },
+    {
+      "name": "drpc",
+      "ok": true,
+      "connectMs": 351,
+      "readyMs": 600
+    }
+  ],
+  "wsFailures": [
+    {
+      "name": "publicnode",
+      "failures": 0
+    },
+    {
+      "name": "drpc",
+      "failures": 0
+    }
+  ],
+  "methodology": "Local monotonic first arrival of the same block hash. Only hashes independently corroborated by both HTTP providers enter paired comparisons. Positive HTTP-minus-WS means WS notification arrived sooner. Pool = earliest among two providers, measured concurrently; not inclusion/transaction latency. HTTP/WS RPC RTT is a separate metric. Fixed reads are individually validated against a two-HTTP-provider block/log reference and the pinned PoolManager code hash; fixed block rechecked afterwards. Coverage is within the observed union, not the complete chain. All warm connections; WS handshake is reported separately. Warmup excluded; no signer, send, eth_call, gas estimation, or fork.",
+  "headComparison": {
+    "observedCanonical": 10,
+    "httpOnly": 0,
+    "wsOnly": 0,
+    "verificationFailed": 0,
+    "disagreement": 0,
+    "canonicalPairs": 10,
+    "wsWins": 10,
+    "httpWins": 0,
+    "httpMinusWsMs": {
+      "n": 10,
+      "p50": 678.0200000000041,
+      "p95": 895.1699999999983,
+      "max": 895.1699999999983
+    },
+    "windows": [
+      {
+        "half": 1,
+        "httpMinusWsMs": {
+          "n": 5,
+          "p50": 678.0200000000041,
+          "p95": 807.75,
+          "max": 807.75
+        }
+      },
+      {
+        "half": 2,
+        "httpMinusWsMs": {
+          "n": 5,
+          "p50": 691.2599999999948,
+          "p95": 895.1699999999983,
+          "max": 895.1699999999983
+        }
+      }
+    ],
+    "perSource": [
+      {
+        "source": "publicnode-http",
+        "observed": 10,
+        "lagFromEarliestMs": {
+          "n": 10,
+          "p50": 678.0200000000041,
+          "p95": 900.4600000000064,
+          "max": 900.4600000000064
+        }
+      },
+      {
+        "source": "drpc-http",
+        "observed": 10,
+        "lagFromEarliestMs": {
+          "n": 10,
+          "p50": 895.1699999999983,
+          "p95": 1825.8099999999977,
+          "max": 1825.8099999999977
+        }
+      },
+      {
+        "source": "publicnode-ws",
+        "observed": 10,
+        "lagFromEarliestMs": {
+          "n": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      {
+        "source": "drpc-ws",
+        "observed": 10,
+        "lagFromEarliestMs": {
+          "n": 10,
+          "p50": 115.36000000000058,
+          "p95": 313.4899999999998,
+          "max": 313.4899999999998
+        }
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "source": "publicnode-http",
+      "methods": [
+        {
+          "phase": "heads",
+          "method": "eth_getBlockByNumber",
+          "attempts": 121,
+          "errors": 0,
+          "ms": {
+            "n": 121,
+            "p50": 148.6,
+            "p95": 170.16,
+            "max": 462.16
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getBlockByNumber",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 148.54,
+            "p95": 159.48,
+            "max": 165.48
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getLogs",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 387.53,
+            "p95": 403.97,
+            "max": 484.22
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getCode",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 160.08,
+            "p95": 170.22,
+            "max": 181.91
+          }
+        }
+      ]
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "methods": [
+        {
+          "phase": "heads",
+          "method": "eth_getBlockByNumber",
+          "attempts": 121,
+          "errors": 0,
+          "ms": {
+            "n": 121,
+            "p50": 137.65,
+            "p95": 162.2,
+            "max": 414.53
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getBlockByNumber",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 134.28,
+            "p95": 143.19,
+            "max": 203.4
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getLogs",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 624.24,
+            "p95": 638.27,
+            "max": 690.05
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getCode",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 156.03,
+            "p95": 175.77,
+            "max": 176.26
+          }
+        }
+      ]
+    },
+    {
+      "source": "drpc-http",
+      "methods": [
+        {
+          "phase": "heads",
+          "method": "eth_getBlockByNumber",
+          "attempts": 120,
+          "errors": 0,
+          "ms": {
+            "n": 120,
+            "p50": 237.28,
+            "p95": 382.46,
+            "max": 589.83
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getBlockByNumber",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 251,
+            "p95": 260.93,
+            "max": 450.18
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getLogs",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 388.53,
+            "p95": 477.79,
+            "max": 592.13
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getCode",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 267.29,
+            "p95": 278.01,
+            "max": 296.06
+          }
+        }
+      ]
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "methods": [
+        {
+          "phase": "heads",
+          "method": "eth_getBlockByNumber",
+          "attempts": 121,
+          "errors": 0,
+          "ms": {
+            "n": 121,
+            "p50": 237.89,
+            "p95": 354.62,
+            "max": 534.26
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getBlockByNumber",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 242.3,
+            "p95": 251.28,
+            "max": 259.24
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getLogs",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 392.34,
+            "p95": 455.26,
+            "max": 485.58
+          }
+        },
+        {
+          "phase": "fixed",
+          "method": "eth_getCode",
+          "attempts": 20,
+          "errors": 0,
+          "ms": {
+            "n": 20,
+            "p50": 265.76,
+            "p95": 292.2,
+            "max": 302.47
+          }
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "number": 26081278,
+      "hash": "0x1e32f8825c5a2280cd45fcdb2b32e3b8ee6d19328215e6543e4498cf33c73f31",
+      "times": {
+        "publicnode-ws": 3525.13,
+        "drpc-ws": 3838.62,
+        "publicnode-http": 3967.39,
+        "drpc-http": 4986.18
+      },
+      "httpPoolMs": 3967.39,
+      "wsPoolMs": 3525.13,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081279,
+      "hash": "0xe93f909915277cd9a3655af6f2af8099b97bd93435ccff3d3d98df3b02e4fd9e",
+      "times": {
+        "publicnode-ws": 15249.74,
+        "drpc-ws": 15473.53,
+        "publicnode-http": 15978.76,
+        "drpc-http": 16087.83
+      },
+      "httpPoolMs": 15978.76,
+      "wsPoolMs": 15249.74,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081280,
+      "hash": "0x0a6d90e6b644fedc837b41164a6362919e099ea9d833ab9c5d010c31b6c80894",
+      "times": {
+        "publicnode-ws": 29366.33,
+        "drpc-ws": 29450.53,
+        "drpc-http": 29971.75,
+        "publicnode-http": 29980.82
+      },
+      "httpPoolMs": 29971.75,
+      "wsPoolMs": 29366.33,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081281,
+      "hash": "0x6de6961fabd0d48709f6b131b9e758bdcdc001476c8a572b85139000afe4ff86",
+      "times": {
+        "publicnode-ws": 40291.96,
+        "drpc-ws": 40407.32,
+        "publicnode-http": 40969.98,
+        "drpc-http": 41211.6
+      },
+      "httpPoolMs": 40969.98,
+      "wsPoolMs": 40291.96,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081282,
+      "hash": "0x029dc4389afd907fd4bc91f68a52690fe0eea65fe239eb371562228ed1a2e1a1",
+      "times": {
+        "publicnode-ws": 53170.39,
+        "drpc-ws": 53275.36,
+        "publicnode-http": 53978.14,
+        "drpc-http": 54236.92
+      },
+      "httpPoolMs": 53978.14,
+      "wsPoolMs": 53170.39,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081283,
+      "hash": "0xf8865c6282de4be3e6311c51980d5a5ff17f638b3fe886228d23c524cdac60ed",
+      "times": {
+        "publicnode-ws": 65077.89,
+        "drpc-ws": 65190.2,
+        "drpc-http": 65973.06,
+        "publicnode-http": 65978.35
+      },
+      "httpPoolMs": 65973.06,
+      "wsPoolMs": 65077.89,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081284,
+      "hash": "0x747e7ae50f64f9f50f32d1bbbe825c6c6ab4bb405cd3f7a9e390fe0482f5b7ff",
+      "times": {
+        "publicnode-ws": 77278.34,
+        "drpc-ws": 77396.35,
+        "publicnode-http": 77988.56,
+        "drpc-http": 78228.1
+      },
+      "httpPoolMs": 77988.56,
+      "wsPoolMs": 77278.34,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081285,
+      "hash": "0x48f1c2082e07f872de3f909c583c765a609f14dd86f356a1da3591905fb1dc86",
+      "times": {
+        "publicnode-ws": 87309.21,
+        "drpc-ws": 87453.7,
+        "drpc-http": 88000.47,
+        "publicnode-http": 88000.62
+      },
+      "httpPoolMs": 88000.47,
+      "wsPoolMs": 87309.21,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081286,
+      "hash": "0x5b09e9a0fc3644ba2a7d643673f05796cc59de7ee56991d4a2e0f260ebc45839",
+      "times": {
+        "publicnode-ws": 99414.5,
+        "drpc-ws": 99571.98,
+        "publicnode-http": 99988.23,
+        "drpc-http": 100098.8
+      },
+      "httpPoolMs": 99988.23,
+      "wsPoolMs": 99414.5,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    },
+    {
+      "number": 26081287,
+      "hash": "0x34e2357703dfbd5431b7404154d372e0b3aa50a90a7ab26fe005481bb167eb92",
+      "times": {
+        "publicnode-ws": 111482.88,
+        "drpc-ws": 111589.96,
+        "publicnode-http": 111994.47,
+        "drpc-http": 113308.69
+      },
+      "httpPoolMs": 111994.47,
+      "wsPoolMs": 111482.88,
+      "verificationFailed": false,
+      "disagreement": false,
+      "canonical": true
+    }
+  ],
+  "requests": [
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1271.65,
+      "ms": 147.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1272.08,
+      "ms": 182.63,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1273.07,
+      "ms": 183.06,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1272.32,
+      "ms": 254.13,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1419.49,
+      "ms": 162.39,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1454.76,
+      "ms": 142.46,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1456.15,
+      "ms": 141.72,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1526.46,
+      "ms": 146.94,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1597.88,
+      "ms": 141.25,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1597.23,
+      "ms": 143.07,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1581.89,
+      "ms": 158.68,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "warmup",
+      "startMs": 1673.4,
+      "ms": 145.3,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 1820.43,
+      "ms": 137.98,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 1820.93,
+      "ms": 140.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 1820.57,
+      "ms": 148.8,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 1819.23,
+      "ms": 152.17,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 2820.76,
+      "ms": 162.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 2819.39,
+      "ms": 170.16,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 2820.84,
+      "ms": 261.6,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 2820.89,
+      "ms": 261.81,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 3820,
+      "ms": 143.6,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 3819.3,
+      "ms": 147.96,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 3820.09,
+      "ms": 149.48,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 3820.06,
+      "ms": 253.87,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 4821.89,
+      "ms": 139.15,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 4820.49,
+      "ms": 155.08,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 4819.39,
+      "ms": 160.27,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 4820.65,
+      "ms": 165.52,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 5819.33,
+      "ms": 133.8,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 5821.64,
+      "ms": 136.29,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 5818.43,
+      "ms": 146.03,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 5820.72,
+      "ms": 144.81,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 6820,
+      "ms": 138.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 6817.74,
+      "ms": 154.36,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 6821.28,
+      "ms": 251.94,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 6820.66,
+      "ms": 254.38,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 7819.64,
+      "ms": 130.93,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 7818.07,
+      "ms": 144.81,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 7821,
+      "ms": 254.97,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 7821.68,
+      "ms": 334.48,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 8819.09,
+      "ms": 141.52,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 8821.42,
+      "ms": 229.96,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 8820.07,
+      "ms": 325.54,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 8822.43,
+      "ms": 407.33,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 9820.61,
+      "ms": 136.14,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 9819.35,
+      "ms": 146.7,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 9821.44,
+      "ms": 242.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 9820.97,
+      "ms": 257.79,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 10819.61,
+      "ms": 136.57,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 10819.82,
+      "ms": 154.33,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 10820.95,
+      "ms": 154.76,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 10820.5,
+      "ms": 248.34,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 11820.58,
+      "ms": 139.95,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 11820.89,
+      "ms": 154.68,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 11821.58,
+      "ms": 249.33,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 11821.63,
+      "ms": 259.76,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 12820.19,
+      "ms": 143.53,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 12820.42,
+      "ms": 147.12,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 12821.49,
+      "ms": 247.16,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 12821.83,
+      "ms": 247.49,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 13820.76,
+      "ms": 137.52,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 13820.9,
+      "ms": 148.15,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 13821.44,
+      "ms": 245.82,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 13821.94,
+      "ms": 247.62,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 14820.01,
+      "ms": 131.71,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 14821.79,
+      "ms": 136.27,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 14820.34,
+      "ms": 152.4,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 14821.84,
+      "ms": 151.28,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 15820.86,
+      "ms": 130.74,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 15821.38,
+      "ms": 146.89,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 15820.98,
+      "ms": 157.77,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 15821.42,
+      "ms": 266.4,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 16821.1,
+      "ms": 127.49,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 16822.26,
+      "ms": 138.32,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 16821.35,
+      "ms": 143.89,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 16822.72,
+      "ms": 237.89,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 17822.22,
+      "ms": 127.57,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 17822.45,
+      "ms": 135.99,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 17823.01,
+      "ms": 141.7,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 17824.38,
+      "ms": 237.23,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 18822.78,
+      "ms": 131.68,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 18823.32,
+      "ms": 147.5,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 18824.71,
+      "ms": 239.57,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 18822.89,
+      "ms": 246.91,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 19822.37,
+      "ms": 130.82,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 19824,
+      "ms": 130.91,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 19822.64,
+      "ms": 148.6,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 19823.53,
+      "ms": 244.06,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 20822.53,
+      "ms": 127.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 20823.18,
+      "ms": 133.55,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 20822.67,
+      "ms": 134.44,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 20824.66,
+      "ms": 235.79,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 21823.09,
+      "ms": 129.02,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 21824.34,
+      "ms": 143.12,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 21826.04,
+      "ms": 242.26,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 21823.35,
+      "ms": 246.74,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 22823.39,
+      "ms": 130.6,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 22823.57,
+      "ms": 148.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 22825.37,
+      "ms": 240.8,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 22824.88,
+      "ms": 245.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 23827.96,
+      "ms": 128.53,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 23824.83,
+      "ms": 131.92,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 23826.18,
+      "ms": 133.8,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 23825.13,
+      "ms": 146.41,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 24824.12,
+      "ms": 129.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 24827.15,
+      "ms": 130.88,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 24824.41,
+      "ms": 141.06,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 24826.5,
+      "ms": 139.21,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 25824.35,
+      "ms": 130.5,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 25826.97,
+      "ms": 128.43,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 25825.9,
+      "ms": 136.09,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 25824.62,
+      "ms": 145.42,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 26824.65,
+      "ms": 129.31,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 26824.95,
+      "ms": 144.89,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 26826.02,
+      "ms": 158.06,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 26826.65,
+      "ms": 166.86,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 27825.15,
+      "ms": 134.61,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 27826.91,
+      "ms": 133.23,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 27825.39,
+      "ms": 148.32,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 27826.35,
+      "ms": 241.24,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 28825.25,
+      "ms": 129.45,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 28827.44,
+      "ms": 135.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 28825.56,
+      "ms": 151.9,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 28826.79,
+      "ms": 193.81,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 29827.33,
+      "ms": 134.94,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 29825.77,
+      "ms": 145.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 29827.48,
+      "ms": 144.25,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 29826.09,
+      "ms": 154.71,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 30829.06,
+      "ms": 128.45,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 30825.85,
+      "ms": 148.92,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 30828.1,
+      "ms": 148.05,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 30826.46,
+      "ms": 151.49,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 31827.33,
+      "ms": 143.11,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 31829.07,
+      "ms": 142.8,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 31828.66,
+      "ms": 152.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 31827.63,
+      "ms": 153.38,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 32826.08,
+      "ms": 142.79,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 32828.77,
+      "ms": 159.52,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 32829.41,
+      "ms": 204.5,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 32827.68,
+      "ms": 249.6,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 33827.21,
+      "ms": 140.47,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 33829.42,
+      "ms": 141.92,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 33827.56,
+      "ms": 149.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 33828.81,
+      "ms": 153.34,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 34827.59,
+      "ms": 160.95,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 34829.16,
+      "ms": 174.25,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 34829.8,
+      "ms": 258.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 34827.89,
+      "ms": 260.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 35829.7,
+      "ms": 141.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 35827.06,
+      "ms": 143.99,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 35827.36,
+      "ms": 151.28,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 35828.72,
+      "ms": 154.05,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 36828.14,
+      "ms": 143.29,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 36828.25,
+      "ms": 151.42,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 36827.13,
+      "ms": 253.67,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 36829.79,
+      "ms": 257,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 37829.41,
+      "ms": 145.35,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 37827.9,
+      "ms": 147.17,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 37827.32,
+      "ms": 154.1,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 37827.95,
+      "ms": 159.77,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 38827.82,
+      "ms": 155.96,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 38827.87,
+      "ms": 159.29,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 38827.27,
+      "ms": 159.99,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 38828.41,
+      "ms": 255.19,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 39829.28,
+      "ms": 140.51,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 39829.09,
+      "ms": 149.49,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 39828.28,
+      "ms": 152.21,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 39828.49,
+      "ms": 157.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 40828.85,
+      "ms": 139.19,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 40830.16,
+      "ms": 139.81,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 40831.96,
+      "ms": 354.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 40829.12,
+      "ms": 382.46,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 41828.6,
+      "ms": 133.96,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 41831.54,
+      "ms": 133.73,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 41828.69,
+      "ms": 137.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 41830.19,
+      "ms": 141.95,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 42830.21,
+      "ms": 137.11,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 42831.65,
+      "ms": 152.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 42832.47,
+      "ms": 185.32,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 42828.76,
+      "ms": 589.83,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 43829.79,
+      "ms": 144.88,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 43831.17,
+      "ms": 150.63,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 43831.88,
+      "ms": 261.76,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 43828.62,
+      "ms": 266.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 44829.85,
+      "ms": 137.06,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 44829.92,
+      "ms": 139.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 44831.26,
+      "ms": 241.88,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 44829.47,
+      "ms": 249.3,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 45831.16,
+      "ms": 143.05,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 45830.45,
+      "ms": 144.05,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 45829.05,
+      "ms": 145.52,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 45830.27,
+      "ms": 148.5,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 46829.32,
+      "ms": 133.06,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 46829.14,
+      "ms": 150.11,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 46830.55,
+      "ms": 243.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 46828.54,
+      "ms": 247.92,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 47832.17,
+      "ms": 131.74,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 47830.07,
+      "ms": 134.1,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 47830.39,
+      "ms": 145.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 47831.51,
+      "ms": 161.49,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 48829.02,
+      "ms": 130.43,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 48830.58,
+      "ms": 139.15,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 48833.32,
+      "ms": 242.26,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 48832.51,
+      "ms": 294.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 49830.01,
+      "ms": 138.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 49830.63,
+      "ms": 142.11,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 49832.74,
+      "ms": 249.34,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 49832.9,
+      "ms": 251.64,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 50832.9,
+      "ms": 147.47,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 50830.27,
+      "ms": 158.9,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 50830.55,
+      "ms": 161.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 50832.72,
+      "ms": 254.57,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 51830.17,
+      "ms": 138.78,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 51833.42,
+      "ms": 135.8,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 51832.76,
+      "ms": 139.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 51830.44,
+      "ms": 147.97,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 52831.66,
+      "ms": 131.95,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 52833.22,
+      "ms": 138.13,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 52831.97,
+      "ms": 142.09,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 52834.02,
+      "ms": 247.89,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 53831.36,
+      "ms": 136.13,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 53834.03,
+      "ms": 133.67,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 53831.7,
+      "ms": 146.42,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 53833.1,
+      "ms": 403.78,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 54830.58,
+      "ms": 136.97,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 54833.38,
+      "ms": 140,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 54832.07,
+      "ms": 151.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 54833.24,
+      "ms": 254.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 55831.84,
+      "ms": 143.35,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 55834.06,
+      "ms": 142.84,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 55833.44,
+      "ms": 146.47,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 55832.17,
+      "ms": 148,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 56831.44,
+      "ms": 137.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 56833.97,
+      "ms": 143.24,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 56831.74,
+      "ms": 152.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 56833.26,
+      "ms": 256.81,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 57832.47,
+      "ms": 143.69,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 57834.01,
+      "ms": 144.02,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 57832.84,
+      "ms": 148.81,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 57833.95,
+      "ms": 251.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 58832.41,
+      "ms": 139.08,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 58834.17,
+      "ms": 140.15,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 58833.81,
+      "ms": 144.08,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 58832.6,
+      "ms": 147.23,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 59832.16,
+      "ms": 136.73,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 59832.34,
+      "ms": 143.44,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 59834.28,
+      "ms": 252.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 59834.34,
+      "ms": 256.38,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 60833.59,
+      "ms": 135.89,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 60834.97,
+      "ms": 134.86,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 60835.06,
+      "ms": 147.24,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 60832.1,
+      "ms": 159.33,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 61834.02,
+      "ms": 134.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 61834.22,
+      "ms": 135.35,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 61833.1,
+      "ms": 145.86,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 61834.3,
+      "ms": 250.66,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 62833.96,
+      "ms": 135.87,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 62834.11,
+      "ms": 144.12,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 62834.08,
+      "ms": 261.19,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 62834.44,
+      "ms": 261.06,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 63833.22,
+      "ms": 133.17,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 63834.59,
+      "ms": 139.08,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 63834.72,
+      "ms": 145.06,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 63833.44,
+      "ms": 150.21,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 64833.23,
+      "ms": 139.38,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 64833.52,
+      "ms": 150.38,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 64834.14,
+      "ms": 259.2,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 64834.18,
+      "ms": 263.87,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 65833.58,
+      "ms": 136.18,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 65835.32,
+      "ms": 137.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 65833.72,
+      "ms": 144.63,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 65834.1,
+      "ms": 404.03,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 66833.93,
+      "ms": 144.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 66833.48,
+      "ms": 145.81,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 66835.22,
+      "ms": 149.53,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 66833.64,
+      "ms": 155.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 67834,
+      "ms": 148.26,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 67833.56,
+      "ms": 157.3,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 67835.31,
+      "ms": 249.64,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 67833.95,
+      "ms": 251.36,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 68835.29,
+      "ms": 134.26,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 68835.13,
+      "ms": 142.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 68833.74,
+      "ms": 144.33,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 68836.48,
+      "ms": 143.86,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 69834.87,
+      "ms": 136.36,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 69836.06,
+      "ms": 143.3,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 69834.33,
+      "ms": 148.34,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 69834.81,
+      "ms": 249.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 70835.02,
+      "ms": 136.61,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 70834.66,
+      "ms": 146.08,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 70835.06,
+      "ms": 258.39,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 70836.25,
+      "ms": 257.39,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 71835.78,
+      "ms": 140.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 71835.7,
+      "ms": 144.95,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 71837.05,
+      "ms": 144.81,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 71835.08,
+      "ms": 149.73,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 72834.95,
+      "ms": 152.64,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 72836.34,
+      "ms": 154.68,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 72834.88,
+      "ms": 244.71,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 72837.48,
+      "ms": 242.4,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 73838.68,
+      "ms": 135.76,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 73835.55,
+      "ms": 159.87,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 73839.12,
+      "ms": 162.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 73836.2,
+      "ms": 260.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 74841.45,
+      "ms": 159.45,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 74840.06,
+      "ms": 168.03,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 74839.41,
+      "ms": 196.38,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 74841.58,
+      "ms": 195.39,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 75841.84,
+      "ms": 414.53,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 75839.06,
+      "ms": 423.45,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 75840.15,
+      "ms": 534.26,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 75841.98,
+      "ms": 536.99,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 76841.15,
+      "ms": 142.16,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 76838.26,
+      "ms": 145.64,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 76839.9,
+      "ms": 242.67,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 76841.22,
+      "ms": 255.8,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 77840.69,
+      "ms": 137.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 77838.24,
+      "ms": 150.31,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 77839.45,
+      "ms": 354.41,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 77841.92,
+      "ms": 386.15,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 78840.04,
+      "ms": 134.89,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 78837.58,
+      "ms": 144.81,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 78841.47,
+      "ms": 330.75,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 78838.59,
+      "ms": 336.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 79840.38,
+      "ms": 135.27,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 79839.01,
+      "ms": 137.47,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 79841.61,
+      "ms": 145.57,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 79838,
+      "ms": 151.89,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 80840.21,
+      "ms": 139.34,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 80841.45,
+      "ms": 138.64,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 80839.59,
+      "ms": 149.93,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 80839.33,
+      "ms": 250.36,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 81840.72,
+      "ms": 142.03,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 81840.39,
+      "ms": 158.23,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 81840.92,
+      "ms": 158.26,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 81842.06,
+      "ms": 249.35,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 82844.75,
+      "ms": 138.26,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 82844.48,
+      "ms": 138.74,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 82844.82,
+      "ms": 150.41,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 82845.83,
+      "ms": 183.02,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 83844.66,
+      "ms": 133.51,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 83844.73,
+      "ms": 146,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 83844.47,
+      "ms": 248,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 83845.45,
+      "ms": 248.51,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 84844.82,
+      "ms": 132.76,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 84844.17,
+      "ms": 142.49,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 84844.73,
+      "ms": 250.9,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 84844.9,
+      "ms": 252.59,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 85844.75,
+      "ms": 135.75,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 85844.81,
+      "ms": 136.74,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 85843.13,
+      "ms": 147.82,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 85844.85,
+      "ms": 147.25,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 86844.63,
+      "ms": 142.21,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 86843.76,
+      "ms": 159.91,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 86844.96,
+      "ms": 172.52,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 86845.07,
+      "ms": 256.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 87843.9,
+      "ms": 148.48,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 87845.45,
+      "ms": 154.99,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 87843.99,
+      "ms": 156.61,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 87845.42,
+      "ms": 403.07,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 88843.49,
+      "ms": 152.43,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 88843.75,
+      "ms": 155.14,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 88845.41,
+      "ms": 251.35,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 88844.97,
+      "ms": 281.61,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 89844.28,
+      "ms": 139.52,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 89844.58,
+      "ms": 159.2,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 89845.69,
+      "ms": 263.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 89845.78,
+      "ms": 270.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 90845.27,
+      "ms": 133.99,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 90844.77,
+      "ms": 148.59,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 90844.88,
+      "ms": 150.86,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 90845.3,
+      "ms": 237.28,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 91844.93,
+      "ms": 134.39,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 91845.31,
+      "ms": 138.89,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 91845.01,
+      "ms": 147.6,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 91845.41,
+      "ms": 148.25,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 92845.31,
+      "ms": 132.88,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 92845.65,
+      "ms": 146.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 92846.5,
+      "ms": 400.61,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 92846.57,
+      "ms": 400.73,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 93847.42,
+      "ms": 245.72,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 93847.52,
+      "ms": 272.03,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 93845.94,
+      "ms": 308.02,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 93846.25,
+      "ms": 462.16,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 94845.98,
+      "ms": 141.38,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 94846.15,
+      "ms": 158.06,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 94848.22,
+      "ms": 208.39,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 94847.93,
+      "ms": 263.01,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 95847.73,
+      "ms": 243.79,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 95846.82,
+      "ms": 258.93,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 95847.82,
+      "ms": 265.82,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 95847.01,
+      "ms": 286.05,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 96848.29,
+      "ms": 135.75,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 96847.08,
+      "ms": 140.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 96848.39,
+      "ms": 140.87,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 96847.29,
+      "ms": 146.02,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 97848.16,
+      "ms": 132.35,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 97846.91,
+      "ms": 136.19,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 97848.22,
+      "ms": 143.68,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 97846.33,
+      "ms": 148.21,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 98847.73,
+      "ms": 139.94,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 98847.68,
+      "ms": 140.07,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 98848,
+      "ms": 141.75,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 98846.93,
+      "ms": 150.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 99847.3,
+      "ms": 135.28,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 99847.51,
+      "ms": 140.71,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 99848.02,
+      "ms": 250.47,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 99848.05,
+      "ms": 250.74,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 100847.11,
+      "ms": 133.36,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 100847.66,
+      "ms": 149.36,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 100848.61,
+      "ms": 240.73,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 100848.74,
+      "ms": 244,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 101847.08,
+      "ms": 139.4,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 101847.62,
+      "ms": 143.5,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 101848.48,
+      "ms": 257.48,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 101849.01,
+      "ms": 409.15,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 102847.17,
+      "ms": 134.14,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 102847.27,
+      "ms": 142.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 102848.85,
+      "ms": 142.88,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 102849.15,
+      "ms": 231.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 103849.78,
+      "ms": 173.22,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 103846.6,
+      "ms": 179.08,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 103848.43,
+      "ms": 199.61,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 103848.06,
+      "ms": 206.21,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 104849.67,
+      "ms": 135.36,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 104846.28,
+      "ms": 140.09,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 104847.26,
+      "ms": 146.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 104848.3,
+      "ms": 273.6,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 105845.74,
+      "ms": 134.58,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 105849.08,
+      "ms": 133.77,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 105848.68,
+      "ms": 140.09,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 105847,
+      "ms": 149.33,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 106846.26,
+      "ms": 136.07,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 106846.43,
+      "ms": 147.44,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 106848.61,
+      "ms": 242.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 106847.12,
+      "ms": 244.62,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 107846.67,
+      "ms": 136.1,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 107848.56,
+      "ms": 145.44,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 107847.1,
+      "ms": 148.44,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 107846.79,
+      "ms": 148.82,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 108846.81,
+      "ms": 131.41,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 108848.27,
+      "ms": 144.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 108849.14,
+      "ms": 244.89,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 108847.06,
+      "ms": 248.93,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 109847.04,
+      "ms": 132.68,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 109848.76,
+      "ms": 142.75,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 109849.02,
+      "ms": 250.23,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 109847.22,
+      "ms": 252.18,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 110847.67,
+      "ms": 134.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 110849.03,
+      "ms": 149.32,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 110849.53,
+      "ms": 215.15,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 110847.97,
+      "ms": 217.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 111849.23,
+      "ms": 137.74,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 111847,
+      "ms": 140.5,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 111847.15,
+      "ms": 142.82,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 111849.02,
+      "ms": 145.45,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 112847.93,
+      "ms": 138.03,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 112849.84,
+      "ms": 150.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 112850.15,
+      "ms": 244.68,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 112848.08,
+      "ms": 460.6,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 113848.27,
+      "ms": 136.69,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 113850.03,
+      "ms": 144.7,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 113850.34,
+      "ms": 242.13,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 113848.41,
+      "ms": 258.59,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 114848.61,
+      "ms": 133.91,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 114849.56,
+      "ms": 146.82,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 114850.1,
+      "ms": 246.31,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 114848.8,
+      "ms": 247.95,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 115849.1,
+      "ms": 140.74,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 115849.36,
+      "ms": 143.71,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 115850.3,
+      "ms": 145.39,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 115850.74,
+      "ms": 264.75,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 116849.66,
+      "ms": 138.02,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 116849.84,
+      "ms": 141.14,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 116850.51,
+      "ms": 143.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 116851.53,
+      "ms": 245.9,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 117849.86,
+      "ms": 141.5,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 117850.24,
+      "ms": 145,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 117851.52,
+      "ms": 242.17,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 117849.95,
+      "ms": 244.08,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 118849.46,
+      "ms": 136.31,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 118851.34,
+      "ms": 138.69,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 118849.75,
+      "ms": 146.95,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 118850.74,
+      "ms": 259.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 119851.68,
+      "ms": 147.56,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 119850.11,
+      "ms": 150.74,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 119851.9,
+      "ms": 345.12,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 119849.97,
+      "ms": 406.57,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 120851.65,
+      "ms": 137.15,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 120853.19,
+      "ms": 135.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 120850.96,
+      "ms": 149.21,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 120852.88,
+      "ms": 262.12,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 121818.29,
+      "ms": 137.27,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 121818.59,
+      "ms": 146.37,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "heads",
+      "startMs": 121818.51,
+      "ms": 149.64,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 124018.65,
+      "ms": 140.08,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 124018.18,
+      "ms": 152.28,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 124018.88,
+      "ms": 246.52,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 124018.77,
+      "ms": 254.16,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 124524.12,
+      "ms": 377.35,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 124524.97,
+      "ms": 382.28,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 124525.12,
+      "ms": 392.04,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 124524.68,
+      "ms": 628.55,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 125404.22,
+      "ms": 156.16,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 125404.55,
+      "ms": 162.34,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 125404.66,
+      "ms": 261.09,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 125404.75,
+      "ms": 292.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 125948.31,
+      "ms": 134.28,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 125947.82,
+      "ms": 153.02,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 125948.62,
+      "ms": 259.24,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 125948.49,
+      "ms": 260.93,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 126460.71,
+      "ms": 388.42,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 126461.08,
+      "ms": 390.03,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 126461.14,
+      "ms": 396.7,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 126460.98,
+      "ms": 635.75,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 127347.06,
+      "ms": 155.24,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 127346.3,
+      "ms": 160.56,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 127347.29,
+      "ms": 265.19,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 127347.69,
+      "ms": 268.19,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 127867.91,
+      "ms": 143.19,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 127867.4,
+      "ms": 147.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 127868.3,
+      "ms": 242.62,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 127868.11,
+      "ms": 244.01,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 128363.85,
+      "ms": 376.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 128363.13,
+      "ms": 384.9,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 128364.08,
+      "ms": 387.99,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 128363.63,
+      "ms": 636.42,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 129251.88,
+      "ms": 156.98,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 129251.57,
+      "ms": 162.1,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 129252.18,
+      "ms": 268.49,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 129251.99,
+      "ms": 272.93,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 129776.86,
+      "ms": 136.05,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 129776.54,
+      "ms": 149,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 129777.07,
+      "ms": 249.68,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 129776.96,
+      "ms": 250.54,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 130277.99,
+      "ms": 385.66,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 130277.7,
+      "ms": 484.22,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 130278.06,
+      "ms": 485.58,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 130277.92,
+      "ms": 638.1,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 131167.76,
+      "ms": 163.57,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 131167.25,
+      "ms": 167.14,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 131167.96,
+      "ms": 268.83,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 131168.09,
+      "ms": 276.37,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 131697.23,
+      "ms": 130.85,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 131695.93,
+      "ms": 157.18,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 131697.83,
+      "ms": 248.91,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 131697.39,
+      "ms": 450.18,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 132398.36,
+      "ms": 387.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 132399.73,
+      "ms": 389.82,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 132399.4,
+      "ms": 445.73,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 132399.1,
+      "ms": 627.31,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 133278.24,
+      "ms": 165.48,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 133277.68,
+      "ms": 170.22,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 133278.68,
+      "ms": 264.93,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 133278.45,
+      "ms": 267.43,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 133796.68,
+      "ms": 146.58,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 133797.23,
+      "ms": 203.4,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 133797.65,
+      "ms": 240.78,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 133797.44,
+      "ms": 253.35,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 134301.16,
+      "ms": 380.15,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 134301.57,
+      "ms": 382.98,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 134301.66,
+      "ms": 394.05,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 134301.47,
+      "ms": 604.44,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 135157.27,
+      "ms": 153.41,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 135159.26,
+      "ms": 175.77,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 135160.06,
+      "ms": 263.92,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 135159.55,
+      "ms": 267.29,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 135677.63,
+      "ms": 131.41,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 135677.18,
+      "ms": 159.48,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 135677.98,
+      "ms": 238.1,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 135677.83,
+      "ms": 249.5,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 136178.88,
+      "ms": 388.45,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 136179.05,
+      "ms": 391.94,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 136178.3,
+      "ms": 395.48,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 136178.74,
+      "ms": 624.91,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 137054.79,
+      "ms": 161.65,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 137054.44,
+      "ms": 166.05,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 137055.01,
+      "ms": 265.19,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 137054.89,
+      "ms": 268.95,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 137575.02,
+      "ms": 137,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 137574.42,
+      "ms": 165.48,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 137575.24,
+      "ms": 250.57,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 137575.13,
+      "ms": 251.54,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 138077.05,
+      "ms": 379.13,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 138077.52,
+      "ms": 420.01,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 138077.43,
+      "ms": 592.13,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 138077.33,
+      "ms": 602.1,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 138931.67,
+      "ms": 155.36,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 138930.93,
+      "ms": 166.87,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 138932.04,
+      "ms": 261.3,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 138931.82,
+      "ms": 266.33,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 139450.23,
+      "ms": 130.03,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 139449.72,
+      "ms": 152.26,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 139450.66,
+      "ms": 240.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 139450.41,
+      "ms": 246.26,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 139947.1,
+      "ms": 395.25,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 139948.1,
+      "ms": 455.26,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 139947.84,
+      "ms": 458.28,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 139947.62,
+      "ms": 610.51,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 140809.67,
+      "ms": 158.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 140809.21,
+      "ms": 161.79,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 140809.78,
+      "ms": 271.33,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 140809.94,
+      "ms": 275.91,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 141338.05,
+      "ms": 132.29,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 141337.68,
+      "ms": 142.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 141338.27,
+      "ms": 245.58,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 141338.17,
+      "ms": 247.36,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 141837.45,
+      "ms": 379.78,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 141836.78,
+      "ms": 385.29,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 141837.77,
+      "ms": 387.97,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 141837.24,
+      "ms": 628.7,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 142718.57,
+      "ms": 154.86,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 142718.02,
+      "ms": 160.08,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 142719.08,
+      "ms": 266.72,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 142718.77,
+      "ms": 273.09,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 143243.02,
+      "ms": 131.35,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 143242.63,
+      "ms": 147.9,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 143243.38,
+      "ms": 239.73,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 143243.18,
+      "ms": 251,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 143745.71,
+      "ms": 384.21,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 143744.83,
+      "ms": 390.88,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 143745.51,
+      "ms": 394.11,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 143745.28,
+      "ms": 624.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 144621.67,
+      "ms": 155.93,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 144620.93,
+      "ms": 162.4,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 144622.12,
+      "ms": 261.27,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 144621.86,
+      "ms": 264.83,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 145138.7,
+      "ms": 136.8,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 145138.31,
+      "ms": 148.33,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 145139.14,
+      "ms": 240.84,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 145138.87,
+      "ms": 247.53,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 145637.64,
+      "ms": 377.61,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 145638.27,
+      "ms": 398.63,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 145638.43,
+      "ms": 402.78,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 145638.11,
+      "ms": 622.55,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 146510.89,
+      "ms": 158.55,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 146510.64,
+      "ms": 163.25,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 146510.97,
+      "ms": 296.06,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 146511.04,
+      "ms": 302.47,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 147064.67,
+      "ms": 138.06,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 147064.09,
+      "ms": 148.54,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 147065.08,
+      "ms": 241.48,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 147064.86,
+      "ms": 251.34,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 147566.59,
+      "ms": 372.84,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 147567.06,
+      "ms": 454.01,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 147566.97,
+      "ms": 477.79,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 147566.86,
+      "ms": 630.49,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 148448.08,
+      "ms": 152.82,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 148447.47,
+      "ms": 157.76,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 148448.43,
+      "ms": 259.38,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 148448.25,
+      "ms": 264.76,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 148963.94,
+      "ms": 131.95,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 148963.34,
+      "ms": 150.88,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 148964.47,
+      "ms": 241.08,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 148964.15,
+      "ms": 247,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 149462.4,
+      "ms": 387.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 149463.53,
+      "ms": 392.27,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 149463.26,
+      "ms": 396.48,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 149463.04,
+      "ms": 623.61,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 150337.06,
+      "ms": 153.86,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 150336.71,
+      "ms": 159.42,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 150337.2,
+      "ms": 268.87,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 150337.52,
+      "ms": 271.9,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 150861.02,
+      "ms": 138.08,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 150860.67,
+      "ms": 150.58,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 150861.25,
+      "ms": 241.82,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 150861.16,
+      "ms": 254.21,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 151365.6,
+      "ms": 382.28,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 151366.43,
+      "ms": 385.64,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 151366.55,
+      "ms": 390.32,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 151366.27,
+      "ms": 638.27,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 152256.27,
+      "ms": 155.35,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 152255.74,
+      "ms": 159.55,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 152256.5,
+      "ms": 258.58,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 152256.73,
+      "ms": 265.76,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 152774.3,
+      "ms": 130.51,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 152773.97,
+      "ms": 148.33,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 152774.45,
+      "ms": 251.28,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 152774.38,
+      "ms": 259.14,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 153283.89,
+      "ms": 388.6,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 153284.2,
+      "ms": 392.89,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 153284.15,
+      "ms": 399.2,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 153284.09,
+      "ms": 690.05,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 154225.72,
+      "ms": 176.26,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 154225.21,
+      "ms": 181.91,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 154226.14,
+      "ms": 271.72,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 154225.84,
+      "ms": 273.7,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 154751.43,
+      "ms": 140.98,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 154750.9,
+      "ms": 148.44,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 154751.81,
+      "ms": 249.96,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 154751.55,
+      "ms": 253.01,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 155255.11,
+      "ms": 384.85,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 155255.88,
+      "ms": 389.02,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 155256.15,
+      "ms": 392.98,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 155255.72,
+      "ms": 621.75,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 156128.4,
+      "ms": 156.03,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 156128.21,
+      "ms": 158.94,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 156128.61,
+      "ms": 260.78,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 156128.5,
+      "ms": 264.83,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 156644.9,
+      "ms": 136.78,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 156644.7,
+      "ms": 148.43,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 156645.02,
+      "ms": 241.02,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 156644.97,
+      "ms": 250.21,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 157146.07,
+      "ms": 387.8,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 157146.24,
+      "ms": 392.34,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 157145.36,
+      "ms": 403.97,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 157145.92,
+      "ms": 624.24,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 158021.37,
+      "ms": 151.72,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 158021.67,
+      "ms": 153.38,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 158021.78,
+      "ms": 261.74,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 158021.9,
+      "ms": 263.97,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 158536.94,
+      "ms": 129.07,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 158536.61,
+      "ms": 142.22,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 158537.12,
+      "ms": 245.4,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 158537.03,
+      "ms": 247.8,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 159036.66,
+      "ms": 375.29,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 159036.75,
+      "ms": 380.27,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 159036.13,
+      "ms": 400.63,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 159036.56,
+      "ms": 615.78,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 159903.21,
+      "ms": 150.24,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 159903.7,
+      "ms": 159,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 159903.82,
+      "ms": 252.78,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 159903.91,
+      "ms": 259.82,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 160414.94,
+      "ms": 129.67,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 160414.72,
+      "ms": 150.67,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 160415.1,
+      "ms": 242.3,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getBlockByNumber",
+      "phase": "fixed",
+      "startMs": 160415.01,
+      "ms": 254.96,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 160921.64,
+      "ms": 388.53,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 160921.76,
+      "ms": 393.62,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 160921.11,
+      "ms": 399.13,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getLogs",
+      "phase": "fixed",
+      "startMs": 160921.53,
+      "ms": 610.23,
+      "ok": true
+    },
+    {
+      "source": "publicnode-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 161782.5,
+      "ms": 153.8,
+      "ok": true
+    },
+    {
+      "source": "publicnode-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 161782.24,
+      "ms": 157.94,
+      "ok": true
+    },
+    {
+      "source": "drpc-http",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 161782.62,
+      "ms": 278.01,
+      "ok": true
+    },
+    {
+      "source": "drpc-ws-rpc",
+      "method": "eth_getCode",
+      "phase": "fixed",
+      "startMs": 161782.85,
+      "ms": 279.49,
+      "ok": true
+    }
+  ]
+}

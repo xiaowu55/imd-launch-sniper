@@ -92,6 +92,31 @@ test("official API project yields exact chain-backed candidate without an IMD ma
   assert.deepEqual(f.urls, [`https://api.imd.fun/launches/${id}`, `https://api.imd.fun/reads/launch/${id}`]);
 });
 
+test("independent official documents load concurrently without bypassing cross-document identity checks", { timeout: 2000 }, async () => {
+  const f = fixture();
+  let releaseDetail!: () => void;
+  const filesStarted = new Promise<void>(resolve => { releaseDetail = resolve; });
+  const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+    if (String(url).includes("/reads/")) releaseDetail();
+    else await filesStarted;
+    return f.fetchImpl(url, init);
+  }) as typeof fetch;
+  const result = await resolveApiLaunch(id, f.client, { fetchImpl });
+  assert.equal(result.candidate.token.toLowerCase(), token);
+  f.deploymentRead.sourceCommit = "e".repeat(40);
+  await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl }), errorCode("read_mismatch"));
+});
+
+test("a failed concurrent files request does not conceal a permanent detail identity mismatch", async () => {
+  const f = fixture();
+  f.detail.chainId = 11155111;
+  const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+    if (String(url).includes("/reads/")) throw Error("upstream failure");
+    return f.fetchImpl(url, init);
+  }) as typeof fetch;
+  await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl }), errorCode("wrong_launch", false));
+});
+
 test("official API hook launch binds exact hook in artifacts, registry, and pool", async () => {
   const f = fixture(true);
   const result = await resolveApiLaunch(id, f.client, { fetchImpl: f.fetchImpl });

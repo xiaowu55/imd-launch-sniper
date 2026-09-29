@@ -49,7 +49,7 @@ export const configSchema = z
     rpcWsUrls: z
       .array(url.refine((x) => protocolAllowed(x, ["ws:", "wss:"])))
       .max(3)
-      .default(["wss://ethereum-rpc.publicnode.com"]),
+      .default(["wss://ethereum-rpc.publicnode.com", "wss://eth.drpc.org"]),
     buyAmountEth: decimal.default("0.01"),
     maxFeeGwei: gasDecimal.default("30"),
     priorityFeeGwei: gasDecimal.default("2"),

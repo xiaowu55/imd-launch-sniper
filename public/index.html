@@ -492,13 +492,13 @@
                       ></textarea
                       ><small
                         >每行一个 Ethereum
-                        主网地址，可使用公共节点或托管服务，无需自己运行节点。</small
+                        主网地址。查询按顺序主备切换；广播同时发送同一笔签名交易。</small
                       ></label
                     >
                     <label class="field full-width"
                       ><span
                         >WebSocket RPC 地址
-                        <span class="optional-label">实时监听</span></span
+                        <span class="optional-label">高级链上模式</span></span
                       ><textarea
                         id="rpcWsUrls"
                         name="rpcWsUrls"
@@ -508,7 +508,7 @@
                         placeholder="wss://你的服务商提供的以太坊主网地址"
                       ></textarea
                       ><small
-                        >每行一个。仅保存于本地服务配置，请勿将含访问密钥的地址分享给他人。</small
+                        >仅高级链上模式使用：多路新区块推送触发 HTTP 补扫。API 模式仍等待官方列表，不会因填写 WS 绕过 API 缓存。</small
                       ></label
                     >
                     <div class="monitor-settings">

@@ -30,16 +30,20 @@ RPC 是读取区块链和提交交易的服务入口，无需自己搭建节点�
 
 - HTTP：`https://ethereum-rpc.publicnode.com`
 - 备用 HTTP：`https://eth.drpc.org`
-- 高级链上模式 WSS：`wss://ethereum-rpc.publicnode.com`
+- 高级链上模式 WSS：`wss://ethereum-rpc.publicnode.com`、`wss://eth.drpc.org`（两路推送触发补扫）
 
 这些公共服务在 2026-09-28 的只读检查中通过主网连接验证，但可能限流、故障或更改服务规则，不能保证抢先成交。备用节点也可能共享底层服务。可在本机换成带 API Key 的托管 RPC；不要公开含密钥的 URL。
+
+查询默认按 PublicNode 主、dRPC 备的顺序切换；实盘广播则同时向两节点发送同一笔签名交易。API 模式不使用 WS 发现新币，WS 仅服务于高级链上模式。
+
+2026-09-29 完成同区块到达时间与固定块读取校验，结果及选择依据见 [RPC / WS 性能比较](docs/RPC_PERFORMANCE.md)。`npm run rpc:benchmark -- 240 runtime/rpc-benchmark.json` 可在本机复测约 4–5 分钟；只读主网数据，不执行买卖模拟或广播。
 
 `npm run rpc:check` 只检查连接，不签名或提交交易。服务说明：[PublicNode](https://ethereum.publicnode.com/)、[dRPC](https://drpc.org/docs/ethereum-api)、[dRPC 限流](https://drpc.org/docs/howitworks/ratelimiting)。
 
 ## API 实盘流程
 
 - 完整分页建立启动基线，只考虑 Ethereum 主网 `live` 记录；原有项目、测试网和启动前部署的缓存记录不买。
-- 读取 `/launches/:id` 与 `/reads/launch/:id`，绑定源码提交、证明、代币、Hook、发射登记及同笔成功交易中的 PoolManager.Initialize。
+- 并行读取 `/launches/:id` 与 `/reads/launch/:id`，随后绑定源码提交、证明、代币、Hook、发射登记及同笔成功交易中的 PoolManager.Initialize。
 - 一批已知候选按区块、交易索引和日志索引排序；缺失详情保留重试。候选被官方撤回或期间收到新的候选时重新核对，已锁定交易后出现不一致则停止。
 - 核对池参数和协议代码，读取实际链上报价、计算正数最低输出、估算 Gas、检查余额和 nonce。报价及 Gas 估算是构造交易所需的节点调用，不执行本地买卖回放。
 - 固定启动时的配置与钱包，签名前再次核对发射区块及候选状态。状态和交易哈希持久化后，向多个 RPC 广播同一份签名交易，等待两次确认。

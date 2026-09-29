@@ -13,7 +13,8 @@
     "test": "tsx --test test/*.test.ts",
     "research": "tsx scripts/research.ts",
     "wallet:import": "tsx scripts/import-wallet.ts",
-    "rpc:check": "tsx scripts/check-public-rpc.ts"
+    "rpc:check": "tsx scripts/check-public-rpc.ts",
+    "rpc:benchmark": "tsx scripts/benchmark-rpc.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.4",

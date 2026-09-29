@@ -1,0 +1,334 @@
+{
+  "startedAt": "2026-09-29T06:12:57.847Z",
+  "seconds": 240,
+  "measurementStartMs": 1853.15,
+  "measurementEndMs": 241853.15,
+  "endpoints": [
+    {
+      "name": "publicnode",
+      "http": "https://ethereum-rpc.publicnode.com",
+      "ws": "wss://ethereum-rpc.publicnode.com"
+    },
+    {
+      "name": "drpc",
+      "http": "https://eth.drpc.org",
+      "ws": "wss://eth.drpc.org"
+    }
+  ],
+  "wsSetup": [
+    {
+      "name": "publicnode",
+      "ok": true,
+      "connectMs": 333,
+      "readyMs": 584
+    },
+    {
+      "name": "drpc",
+      "ok": true,
+      "connectMs": 347,
+      "readyMs": 587
+    }
+  ],
+  "wsFailures": [
+    {
+      "name": "publicnode",
+      "failures": 0
+    },
+    {
+      "name": "drpc",
+      "failures": 0
+    }
+  ],
+  "pollIntervalMs": 1000,
+  "methodology": "First pass head observations only. Refiltered strictly to the declared receive window. Canonical hashes cross-checked with both HTTP providers. Fixed-read timings from this preliminary pass are intentionally not used: they did not validate every payload. Use the schemaVersion 2 benchmark for content-validated request timings.",
+  "stats": {
+    "n": 20,
+    "p50": 511.5599999999977,
+    "p95": 910.9199999999837,
+    "max": 1080.8699999999953
+  },
+  "wsWins": 20,
+  "httpWins": 0,
+  "blocks": [
+    {
+      "number": 26081253,
+      "hash": "0x34b5e7a618aeac1a7457ed54a7c29ff2299fa90a5c669d6d778bd15a3b065dd7",
+      "times": {
+        "publicnode-ws": 4494.2,
+        "drpc-ws": 4813.16,
+        "drpc-http": 5007.66,
+        "publicnode-http": 5016.38
+      },
+      "httpPoolMs": 5007.66,
+      "wsPoolMs": 4494.2,
+      "canonical": true,
+      "httpMinusWsMs": 513.46
+    },
+    {
+      "number": 26081254,
+      "hash": "0x53b80e139f79f96cd4effa00cd05e347391122458ca1cff6889039afdea03dd3",
+      "times": {
+        "publicnode-ws": 16587.96,
+        "drpc-ws": 16807.07,
+        "drpc-http": 17199.45,
+        "publicnode-http": 17742.69
+      },
+      "httpPoolMs": 17199.45,
+      "wsPoolMs": 16587.96,
+      "canonical": true,
+      "httpMinusWsMs": 611.4900000000016
+    },
+    {
+      "number": 26081255,
+      "hash": "0xa80c075fc8552102b0d63e48b318123e4c72455d7cd5d9654a8cf04b1c4b6279",
+      "times": {
+        "publicnode-ws": 28514.36,
+        "drpc-ws": 28673.29,
+        "publicnode-http": 29339.81,
+        "drpc-http": 30162.77
+      },
+      "httpPoolMs": 29339.81,
+      "wsPoolMs": 28514.36,
+      "canonical": true,
+      "httpMinusWsMs": 825.4500000000007
+    },
+    {
+      "number": 26081256,
+      "hash": "0x033201092226de876d5c4215c9b5ded6f6756629a1d26a1c20a37d38662f2029",
+      "times": {
+        "publicnode-ws": 40405.05,
+        "drpc-ws": 40484.76,
+        "publicnode-http": 41015.01,
+        "drpc-http": 42175.92
+      },
+      "httpPoolMs": 41015.01,
+      "wsPoolMs": 40405.05,
+      "canonical": true,
+      "httpMinusWsMs": 609.9599999999991
+    },
+    {
+      "number": 26081257,
+      "hash": "0xc0d7d65cd644a22e4d0d468a05bd4572fccd6d222fb428a2761a466d90eb0aa7",
+      "times": {
+        "publicnode-ws": 50715.91,
+        "drpc-ws": 50878.15,
+        "publicnode-http": 51017.06,
+        "drpc-http": 52040.92
+      },
+      "httpPoolMs": 51017.06,
+      "wsPoolMs": 50715.91,
+      "canonical": true,
+      "httpMinusWsMs": 301.1499999999942
+    },
+    {
+      "number": 26081258,
+      "hash": "0x565b5a029d3ff3e6342e7463132def7db5626f425113c93bdfcc6cf4cd233903",
+      "times": {
+        "publicnode-ws": 64452.87,
+        "drpc-ws": 64532.28,
+        "publicnode-http": 65018.61,
+        "drpc-http": 65026.02
+      },
+      "httpPoolMs": 65018.61,
+      "wsPoolMs": 64452.87,
+      "canonical": true,
+      "httpMinusWsMs": 565.739999999998
+    },
+    {
+      "number": 26081259,
+      "hash": "0x45d06cccd3c69b03e50533c15e95b8e4a7bf2f39ca520f5952f62eb6e43d382f",
+      "times": {
+        "publicnode-ws": 76772.53,
+        "publicnode-http": 77035.16,
+        "drpc-ws": 77043.46,
+        "drpc-http": 78020.87
+      },
+      "httpPoolMs": 77035.16,
+      "wsPoolMs": 76772.53,
+      "canonical": true,
+      "httpMinusWsMs": 262.63000000000466
+    },
+    {
+      "number": 26081260,
+      "hash": "0x9714f57861a992aa07e70fd74c38d55427e55d68fb8a4cb772fce193a691cc0b",
+      "times": {
+        "publicnode-ws": 86920.39,
+        "drpc-http": 87127.42,
+        "drpc-ws": 87770.77,
+        "publicnode-http": 88298.57
+      },
+      "httpPoolMs": 87127.42,
+      "wsPoolMs": 86920.39,
+      "canonical": true,
+      "httpMinusWsMs": 207.02999999999884
+    },
+    {
+      "number": 26081261,
+      "hash": "0xf20d8abeaa47b07b35f0ec8d02c0db1d005012d12b86a1d28a98fa48206a910b",
+      "times": {
+        "publicnode-ws": 99145.64,
+        "drpc-ws": 99179.17,
+        "publicnode-http": 100029.42,
+        "drpc-http": 100225.68
+      },
+      "httpPoolMs": 100029.42,
+      "wsPoolMs": 99145.64,
+      "canonical": true,
+      "httpMinusWsMs": 883.7799999999988
+    },
+    {
+      "number": 26081262,
+      "hash": "0x96c01a79169ed67bedb4b2f5df058068dfda6f8bccda994b94d1e0c745252c7c",
+      "times": {
+        "drpc-ws": 113290.05,
+        "drpc-http": 114046.4,
+        "publicnode-ws": 114289.15,
+        "publicnode-http": 115020.76
+      },
+      "httpPoolMs": 114046.4,
+      "wsPoolMs": 113290.05,
+      "canonical": true,
+      "httpMinusWsMs": 756.3499999999913
+    },
+    {
+      "number": 26081263,
+      "hash": "0x69e1b20a49bfe3ae95bdcfa08d3871af4f19a1142c4672c47503e36f73a5f80e",
+      "times": {
+        "publicnode-ws": 122772.74,
+        "drpc-ws": 123022.28,
+        "publicnode-http": 123046.91,
+        "drpc-http": 123158.02
+      },
+      "httpPoolMs": 123046.91,
+      "wsPoolMs": 122772.74,
+      "canonical": true,
+      "httpMinusWsMs": 274.16999999999825
+    },
+    {
+      "number": 26081264,
+      "hash": "0x7299d6a87a3d230793017428a0c12a7741b66de614494aa277768f8a383e54e9",
+      "times": {
+        "publicnode-ws": 136536.39,
+        "drpc-ws": 136727.95,
+        "publicnode-http": 137047.95,
+        "drpc-http": 137140.15
+      },
+      "httpPoolMs": 137047.95,
+      "wsPoolMs": 136536.39,
+      "canonical": true,
+      "httpMinusWsMs": 511.5599999999977
+    },
+    {
+      "number": 26081265,
+      "hash": "0x82c45a3f1f7212750ad9996730fece8fff5a55b6b156473e4f2c622f30b32292",
+      "times": {
+        "publicnode-ws": 147678.79,
+        "drpc-ws": 147902.12,
+        "publicnode-http": 148047.95,
+        "drpc-http": 148161.41
+      },
+      "httpPoolMs": 148047.95,
+      "wsPoolMs": 147678.79,
+      "canonical": true,
+      "httpMinusWsMs": 369.1600000000035
+    },
+    {
+      "number": 26081266,
+      "hash": "0xb69768995b4ccfd2e61a683f83cb271528a51f0a6f2db4e55f8afb457d69d903",
+      "times": {
+        "publicnode-ws": 158960.37,
+        "drpc-ws": 159226.55,
+        "publicnode-http": 160041.24,
+        "drpc-http": 160062.47
+      },
+      "httpPoolMs": 160041.24,
+      "wsPoolMs": 158960.37,
+      "canonical": true,
+      "httpMinusWsMs": 1080.8699999999953
+    },
+    {
+      "number": 26081267,
+      "hash": "0x4898a1a42fb626e1342a6a16ea9eb0f44d385a34080e62537cdc01b3143cf0b4",
+      "times": {
+        "publicnode-ws": 170944.72,
+        "publicnode-http": 171096.43,
+        "drpc-ws": 171132.33,
+        "drpc-http": 172071.82
+      },
+      "httpPoolMs": 171096.43,
+      "wsPoolMs": 170944.72,
+      "canonical": true,
+      "httpMinusWsMs": 151.70999999999185
+    },
+    {
+      "number": 26081268,
+      "hash": "0x5a30a5b62e435ff510cabbdd234b520e647046ecfcee10b744bacf7b1888747a",
+      "times": {
+        "publicnode-ws": 182848.15,
+        "drpc-ws": 183033.26,
+        "publicnode-http": 183052.96,
+        "drpc-http": 185060.96
+      },
+      "httpPoolMs": 183052.96,
+      "wsPoolMs": 182848.15,
+      "canonical": true,
+      "httpMinusWsMs": 204.80999999999767
+    },
+    {
+      "number": 26081269,
+      "hash": "0xf7b4b9f6d7cadb3d0c964ca2d17e5a53dc5c5a7dfb96273597c7c47c20d2b1dd",
+      "times": {
+        "publicnode-ws": 194774.02,
+        "drpc-ws": 195015.96,
+        "publicnode-http": 195075.54,
+        "drpc-http": 196068.86
+      },
+      "httpPoolMs": 195075.54,
+      "wsPoolMs": 194774.02,
+      "canonical": true,
+      "httpMinusWsMs": 301.5200000000186
+    },
+    {
+      "number": 26081270,
+      "hash": "0xa53d23af430d2c74521e6b60b2a669afdd79644e586c3486a682176d8de7c316",
+      "times": {
+        "publicnode-ws": 207272.68,
+        "drpc-ws": 207342.75,
+        "publicnode-http": 208052.36,
+        "drpc-http": 208073.09
+      },
+      "httpPoolMs": 208052.36,
+      "wsPoolMs": 207272.68,
+      "canonical": true,
+      "httpMinusWsMs": 779.679999999993
+    },
+    {
+      "number": 26081271,
+      "hash": "0x281794837d0f251a9908e43358f0653d7e3844368a7c5b9b439394f9c6d752bd",
+      "times": {
+        "publicnode-ws": 220141.76,
+        "drpc-ws": 220238.62,
+        "publicnode-http": 221052.68,
+        "drpc-http": 221069.97
+      },
+      "httpPoolMs": 221052.68,
+      "wsPoolMs": 220141.76,
+      "canonical": true,
+      "httpMinusWsMs": 910.9199999999837
+    },
+    {
+      "number": 26081272,
+      "hash": "0xc88a68165d22d0f5ac960fb7db69af0f9216587497f7a3e64520c2e9df323e42",
+      "times": {
+        "publicnode-ws": 230670.82,
+        "drpc-ws": 230708.33,
+        "publicnode-http": 231052.29,
+        "drpc-http": 231177.01
+      },
+      "httpPoolMs": 231052.29,
+      "wsPoolMs": 230670.82,
+      "canonical": true,
+      "httpMinusWsMs": 381.47000000000116
+    }
+  ]
+}

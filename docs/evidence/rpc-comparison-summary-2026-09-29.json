@@ -1,0 +1,52 @@
+{
+  "combinedHeadObservations": {
+    "n": 30,
+    "p50": 573.7299999999959,
+    "p95": 910.9199999999837,
+    "max": 1080.8699999999953,
+    "wsWins": 30,
+    "httpWins": 0
+  },
+  "validatedConcurrentHttpPool": [
+    {
+      "method": "eth_getBlockByNumber",
+      "ms": {
+        "n": 20,
+        "p50": 148.54000000000815,
+        "p95": 159.48000000001048,
+        "max": 165.48000000001048
+      },
+      "wins": {
+        "publicnode": 20,
+        "drpc": 0
+      }
+    },
+    {
+      "method": "eth_getLogs",
+      "ms": {
+        "n": 20,
+        "p50": 384.8500000000058,
+        "p95": 390.88000000000466,
+        "max": 395.25
+      },
+      "wins": {
+        "publicnode": 13,
+        "drpc": 7
+      }
+    },
+    {
+      "method": "eth_getCode",
+      "ms": {
+        "n": 20,
+        "p50": 160.0799999999872,
+        "p95": 170.22000000000116,
+        "max": 181.9100000000035
+      },
+      "wins": {
+        "publicnode": 20,
+        "drpc": 0
+      }
+    }
+  ],
+  "note": "The hypothetical first-success HTTP read pool is derived from simultaneous validated requests. Production reads remain ordered primary/fallback; production transaction broadcast is already concurrent. No signed transaction was sent."
+}
