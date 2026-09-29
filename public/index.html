@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#101415" />
+    <title>IMD · 首发监听控制台</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a href="#overview" class="brand" aria-label="IMD 控制台首页"
+          ><span class="brand-mark">i</span
+          ><span
+            >imd<span class="brand-dot">.</span
+            ><small>LAUNCH CONSOLE</small></span
+          ></a
+        >
+        <div class="workspace-label">工作空间 <span>01</span></div>
+        <nav aria-label="主导航">
+          <a href="#overview" class="nav-item active"
+            ><span class="nav-icon">◈</span>控制台<span class="nav-shortcut"
+              >⌘ 1</span
+            ></a
+          >
+          <a href="#strategy" class="nav-item"
+            ><span class="nav-icon">≡</span>买入策略</a
+          >
+          <a href="#wallet" class="nav-item"
+            ><span class="nav-icon">⌑</span>执行钱包</a
+          >
+          <a href="#network" class="nav-item"
+            ><span class="nav-icon">⌁</span>网络连接</a
+          >
+          <a href="#activity" class="nav-item"
+            ><span class="nav-icon">▤</span>运行记录</a
+          >
+        </nav>
+        <div class="sidebar-note">
+          <span class="mini-label">执行原则</span>
+          <p>只买首个<br /><strong>符合你条件的项目。</strong></p>
+          <span>链上校验 → 报价 → 提交<br />成交结果以链上回执为准</span>
+        </div>
+        <a
+          class="docs-link"
+          href="https://imd.fun/docs/"
+          target="_blank"
+          rel="noreferrer"
+          >IMD 官方文档 <span>↗</span></a
+        >
+        <div class="local-tag">
+          <span class="status-dot muted"></span>本地运行 · 私钥不上页面
+        </div>
+      </aside>
+
+      <div class="main-shell">
+        <header class="topbar">
+          <div class="breadcrumb">工作空间 <span>/</span> 首发监听</div>
+          <div class="topbar-right">
+            <span class="chain-tag"
+              ><span class="eth-icon">◆</span>Ethereum</span
+            ><span class="connection-pill" id="connection-status"
+              ><span class="status-dot muted"></span><span>连接中</span></span
+            >
+          </div>
+        </header>
+        <main>
+          <section id="overview" class="page-heading">
+            <div>
+              <div class="eyebrow">EARLY SIGNAL. PRECISE EXECUTION.</div>
+              <h1>首发监听控制台<span class="heading-dot">.</span></h1>
+              <p>设置条件，监听 IMD 新项目，在校验通过后执行首笔买入。</p>
+            </div>
+            <div class="heading-meta">
+              <span class="mini-label">当前执行模式</span
+              ><span class="mode-tag" id="mode-label">等待服务端</span>
+            </div>
+          </section>
+
+          <div
+            id="feedback"
+            class="feedback"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
+
+          <section class="deployment-banner" aria-label="部署校验说明">
+            <span class="banner-icon">i</span>
+            <div>
+              <strong id="deployment-heading">主网部署需要验证</strong>
+              <p id="deployment-detail">
+                请先配置钱包、金额与费用，通过就绪检查后，由你明确启动实盘。
+              </p>
+            </div>
+            <a href="#readiness">查看就绪检查 <span>↗</span></a>
+          </section>
+
+          <section class="stat-grid" aria-label="运行概览">
+            <article class="stat-card">
+              <span class="mini-label">监听状态</span>
+              <div class="stat-value" id="run-status">
+                未连接<span class="status-orbit idle"></span>
+              </div>
+              <p id="run-detail">正在读取本地服务状态</p>
+            </article>
+            <article class="stat-card">
+              <span class="mini-label">单笔买入预算</span>
+              <div class="stat-value">
+                <span id="budget-value">—</span
+                ><span class="stat-unit">ETH</span>
+              </div>
+              <p>仅用于买币，Gas 费用另计</p>
+            </article>
+            <article class="stat-card">
+              <span class="mini-label">单笔 Gas 预算上限</span>
+              <div class="stat-value">
+                <span id="gas-value">—</span><span class="stat-unit">ETH</span>
+              </div>
+              <p>实际消耗以链上执行为准</p>
+            </article>
+            <article class="stat-card">
+              <span class="mini-label">最近一次事件</span>
+              <div class="stat-value stat-time" id="last-event-time">—</div>
+              <p id="last-event-detail">尚未收到运行记录</p>
+            </article>
+          </section>
+
+          <form id="config-form" novalidate>
+            <div class="content-grid">
+              <div class="settings-column">
+                <section class="panel wallet-panel" id="wallet">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="section-number">01</span>
+                      <h2>执行钱包</h2>
+                    </div>
+                    <span id="wallet-status" class="small-tag">读取中</span>
+                  </div>
+                  <div class="panel-body">
+                    <div class="wallet-account">
+                      <div class="wallet-address-block">
+                        <span class="mini-label">自动买入使用的钱包地址</span>
+                        <code id="wallet-address" class="wallet-address"
+                          >等待本地服务</code
+                        >
+                      </div>
+                      <button
+                        id="wallet-reload-button"
+                        class="button secondary"
+                        type="button"
+                        disabled
+                      >
+                        重新加载钱包
+                      </button>
+                    </div>
+                    <p
+                      id="wallet-detail"
+                      class="wallet-detail"
+                      aria-live="polite"
+                    >
+                      实盘需要执行钱包。本地服务会使用这个钱包签名。
+                    </p>
+                    <details class="advanced-settings wallet-import">
+                      <summary>导入或更换钱包<span>＋</span></summary>
+                      <ol class="wallet-steps">
+                        <li>
+                          <strong>在本项目文件夹中打开终端</strong>
+                          <p>
+                            先进入含有 package.json
+                            的项目目录，再运行下面的命令。
+                          </p>
+                          <pre><code>npm run wallet:import</code></pre>
+                        </li>
+                        <li>
+                          <strong>按照终端提示粘贴钱包私钥</strong>
+                          <p>
+                            输入内容会隐藏。导入完成只显示公开的钱包地址，核对它是否属于你要使用的钱包。
+                          </p>
+                        </li>
+                        <li>
+                          <strong>回到这里，点击「重新加载钱包」</strong>
+                          <p>
+                            先停止监听再更换钱包。地址加载成功后，再检查实盘就绪状态。
+                          </p>
+                        </li>
+                      </ol>
+                      <div class="key-note">
+                        <span>⌑</span>
+                        <p>
+                          私钥保存在本机项目的
+                          <code>.env</code>
+                          文件中，文件权限仅限当前用户读写，但内容是明文、未加密。不要把私钥发到聊天或粘贴到网页，也不要分享这个文件。
+                        </p>
+                      </div>
+                    </details>
+                  </div>
+                </section>
+                <section class="panel" id="strategy">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="section-number">02</span>
+                      <h2>买入与费用</h2>
+                    </div>
+                    <span class="panel-note">金额和费用由你决定</span>
+                  </div>
+                  <div class="panel-body">
+                    <div class="input-grid">
+                      <label class="field"
+                        ><span>单笔买入金额</span>
+                        <div class="input-unit">
+                          <input
+                            id="buyAmountEth"
+                            name="buyAmountEth"
+                            inputmode="decimal"
+                            type="number"
+                            min="0.000000000000000001"
+                            step="any"
+                            placeholder="0.01"
+                            required
+                          /><span>ETH</span>
+                        </div>
+                        <small id="buy-target-detail"
+                          >启动后第一个符合条件的新主网币，买入一次</small
+                        ></label
+                      ><label class="field"
+                        ><span>最大滑点</span>
+                        <div class="input-unit">
+                          <input
+                            id="slippageBps"
+                            name="slippageBps"
+                            inputmode="decimal"
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="0.01"
+                            required
+                          /><span>%</span>
+                        </div>
+                        <small>限制池报价输出，不保证扣税后净到账</small></label
+                      >
+                    </div>
+                    <div class="field-divider">
+                      <span>GAS · 链上交易费</span>
+                    </div>
+                    <div class="input-grid">
+                      <label class="field"
+                        ><span>最高 Gas 单价</span>
+                        <div class="input-unit">
+                          <input
+                            id="maxFeeGwei"
+                            name="maxFeeGwei"
+                            type="number"
+                            inputmode="decimal"
+                            min="0.000000001"
+                            step="any"
+                            required
+                          /><span>Gwei</span>
+                        </div>
+                        <small>每单位 Gas 最高愿付价格</small></label
+                      ><label class="field"
+                        ><span>优先费</span>
+                        <div class="input-unit">
+                          <input
+                            id="priorityFeeGwei"
+                            name="priorityFeeGwei"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            step="any"
+                            required
+                          /><span>Gwei</span>
+                        </div>
+                        <small>影响打包优先级，不能保证抢先</small></label
+                      ><label class="field"
+                        ><span>单笔 Gas 总预算上限</span>
+                        <div class="input-unit">
+                          <input
+                            id="maxGasEth"
+                            name="maxGasEth"
+                            type="number"
+                            inputmode="decimal"
+                            min="0.000000000000000001"
+                            step="any"
+                            required
+                          /><span>ETH</span>
+                        </div>
+                        <small>预估最大 Gas 费用超出时，不提交</small></label
+                      ><label class="field"
+                        ><span>交易有效期</span>
+                        <div class="input-unit">
+                          <input
+                            id="deadlineSeconds"
+                            name="deadlineSeconds"
+                            type="number"
+                            min="20"
+                            max="300"
+                            step="1"
+                            required
+                          /><span>秒</span>
+                        </div>
+                        <small>超时执行的交易应被合约拒绝</small></label
+                      >
+                    </div>
+                  </div>
+                </section>
+
+                <section class="panel" id="filters">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="section-number">03</span>
+                      <h2>筛选条件</h2>
+                    </div>
+                    <span class="panel-note">全部通过，才进入买入流程</span>
+                  </div>
+                  <div class="panel-body">
+                    <div class="input-grid">
+                      <label class="field"
+                        ><span>最高买入税率</span>
+                        <div class="input-unit">
+                          <input
+                            id="maxBuyTaxBps"
+                            name="maxBuyTaxBps"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            max="50"
+                            step="0.01"
+                            required
+                          /><span>%</span>
+                        </div>
+                        <small id="tax-buy-hint"
+                          >API 模式未检测，税率阈值不生效</small
+                        ></label
+                      ><label class="field"
+                        ><span>最高卖出税率</span>
+                        <div class="input-unit">
+                          <input
+                            id="maxSellTaxBps"
+                            name="maxSellTaxBps"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            max="50"
+                            step="0.01"
+                            required
+                          /><span>%</span>
+                        </div>
+                        <small id="tax-sell-hint"
+                          >API 模式未检测，卖出能力未验证</small
+                        ></label
+                      >
+                    </div>
+                    <div class="inline-note" id="tax-check-note">
+                      <span id="tax-check-symbol">!</span>
+                      <p id="tax-check-detail">
+                        买卖税率未检测（不进行买卖模拟），卖出能力未验证，以上阈值不生效。仍按金额、Gas、池报价滑点与其他链上校验执行。
+                      </p>
+                    </div>
+                    <details class="advanced-settings filter-advanced">
+                      <summary>更多筛选条件<span>＋</span></summary>
+                      <div class="input-grid">
+                        <label class="field"
+                          ><span>最低已验证 ETH 储备</span>
+                          <div class="input-unit">
+                            <input
+                              id="minLiquidityEth"
+                              name="minLiquidityEth"
+                              type="number"
+                              min="0"
+                              step="any"
+                              inputmode="decimal"
+                              required
+                            /><span>ETH</span>
+                          </div>
+                          <small
+                            >当前未接入独立储备证据；大于 0 会拒绝候选，建议保持
+                            0</small
+                          ></label
+                        ><label class="field"
+                          ><span>最小发射编号</span
+                          ><input
+                            id="minLaunchNumber"
+                            name="minLaunchNumber"
+                            type="number"
+                            min="1"
+                            max="9007199254740991"
+                            step="1"
+                            required
+                          /><small
+                            >从此编号开始寻找首个符合条件的项目</small
+                          ></label
+                        >
+                      </div>
+                      <fieldset class="kind-fieldset">
+                        <legend>允许的项目类型</legend>
+                        <div class="kind-options">
+                          <label class="check-chip"
+                            ><input
+                              type="checkbox"
+                              name="allowedKinds"
+                              value="evm_project"
+                            /><span>v4 项目池</span></label
+                          ><label class="check-chip"
+                            ><input
+                              type="checkbox"
+                              name="allowedKinds"
+                              value="custom_token"
+                            /><span>v4 自定义代币</span></label
+                          ><label class="check-chip"
+                            ><input
+                              type="checkbox"
+                              name="allowedKinds"
+                              value="univ4_hook"
+                            /><span>v4 Hook 项目</span></label
+                          >
+                        </div>
+                        <p class="kind-explainer">
+                          这三类都基于 Uniswap v4。这里筛选的是项目类型；「Hook
+                          项目」表示带自定义逻辑的类型，不是 v4 版本开关。
+                        </p>
+                      </fieldset>
+                      <label
+                        class="field full-width mode-conditional"
+                        id="hook-whitelist-field"
+                        hidden
+                        ><span>允许的 Hook 地址</span
+                        ><textarea
+                          id="allowedHooks"
+                          name="allowedHooks"
+                          rows="2"
+                          spellcheck="false"
+                          placeholder="0x…（每行一个地址）"
+                        ></textarea
+                        ><small
+                          >全零地址表示不带 Hook 的池。带 Hook
+                          的项目需填写核实后的官方合约地址；正式主网地址公布后再校验，不能用测试网地址代替。</small
+                        ></label
+                      >
+                    </details>
+                  </div>
+                </section>
+
+                <section class="panel" id="network">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="section-number">04</span>
+                      <h2>网络连接</h2>
+                    </div>
+                    <span class="panel-note">RPC ＝ 连接以太坊的入口</span>
+                  </div>
+                  <div class="panel-body">
+                    <label class="field discovery-field"
+                      ><span>项目发现方式</span
+                      ><select id="discoverySource" name="discoverySource">
+                        <option value="api" selected>
+                          官方 API 自动发现（默认）
+                        </option>
+                        <option value="chain">
+                          链上合约监听（高级）
+                        </option></select
+                      ><small id="discovery-detail"
+                        >自动读取官方新主网代币、池和 Hook
+                        信息，核对链上回执，无需手填发射合约地址。</small
+                      ></label
+                    >
+                    <div class="rpc-explainer">
+                      <span class="rpc-icon">⌁</span>
+                      <div>
+                        <strong>不用自建节点，也能连接以太坊</strong>
+                        <p>
+                          RPC 是别人提供的以太坊节点服务。HTTP
+                          负责查询与发送交易，WebSocket
+                          接收实时消息。可使用免费公共节点或服务商提供的地址；共享节点适合观察和测试，有延迟与限速，不能保证最快买入。
+                        </p>
+                      </div>
+                    </div>
+                    <label class="field full-width"
+                      ><span
+                        >HTTP RPC 地址
+                        <span class="optional-label">实盘需要</span></span
+                      ><textarea
+                        id="rpcHttpUrls"
+                        name="rpcHttpUrls"
+                        rows="2"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="https://你的服务商提供的以太坊主网地址"
+                      ></textarea
+                      ><small
+                        >每行一个 Ethereum
+                        主网地址，可使用公共节点或托管服务，无需自己运行节点。</small
+                      ></label
+                    >
+                    <label class="field full-width"
+                      ><span
+                        >WebSocket RPC 地址
+                        <span class="optional-label">实时监听</span></span
+                      ><textarea
+                        id="rpcWsUrls"
+                        name="rpcWsUrls"
+                        rows="2"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="wss://你的服务商提供的以太坊主网地址"
+                      ></textarea
+                      ><small
+                        >每行一个。仅保存于本地服务配置，请勿将含访问密钥的地址分享给他人。</small
+                      ></label
+                    >
+                    <div class="monitor-settings">
+                      <label
+                        class="field full-width mode-conditional"
+                        id="chain-start-mode"
+                        hidden
+                        ><span>从哪里开始监听</span
+                        ><select id="startBlockMode" name="startBlockMode">
+                          <option value="auto" selected>
+                            自动查找起点（推荐）
+                          </option>
+                          <option value="manual">手动指定区块</option></select
+                        ><small>
+                          自动模式从已核实官方发射合约的最早部署区块开始核对，无需填写区块号。
+                        </small></label
+                      >
+                      <label
+                        class="field full-width manual-start-block"
+                        id="manual-start-block"
+                        hidden
+                        ><span>手动起始区块</span
+                        ><input
+                          id="startBlock"
+                          name="startBlock"
+                          type="text"
+                          inputmode="numeric"
+                          pattern="[0-9]*[1-9][0-9]*"
+                          spellcheck="false"
+                          placeholder="填写大于 0 的区块号"
+                          disabled
+                        /><small
+                          >仅在已确认监控范围时手动指定；通常保留自动模式即可。</small
+                        ></label
+                      >
+                      <div
+                        class="monitor-status"
+                        id="monitor-status-panel"
+                        data-status="pending"
+                      >
+                        <div class="monitor-status-heading">
+                          <strong>监控进度</strong>
+                          <span class="small-tag" id="monitor-status"
+                            >等待同步</span
+                          >
+                        </div>
+                        <p id="monitor-detail" aria-live="polite">
+                          正在读取服务端监控状态。
+                        </p>
+                        <dl class="monitor-facts">
+                          <div>
+                            <dt id="monitor-start-label">监听开始于</dt>
+                            <dd id="monitor-start">待确定</dd>
+                          </div>
+                          <div>
+                            <dt>来源</dt>
+                            <dd id="monitor-source">—</dd>
+                          </div>
+                          <div
+                            id="monitor-next-item"
+                            class="mode-conditional"
+                            hidden
+                          >
+                            <dt>下一扫描区块</dt>
+                            <dd id="monitor-next">—</dd>
+                          </div>
+                          <div
+                            id="monitor-audit-item"
+                            class="mode-conditional"
+                            hidden
+                          >
+                            <dt>本次历史目标</dt>
+                            <dd id="monitor-audit">—</dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <p class="monitor-explainer" id="monitor-explanation">
+                        启动时已可交易的主网币不会购买。包含当时仍在准备、启动后才完成部署的项目；每次继续运行会保留已有记录。
+                      </p>
+                      <p
+                        class="monitor-explainer mode-conditional"
+                        id="chain-deployment-note"
+                        hidden
+                      >
+                        自动查找仍需先核实官方主网发射合约地址与代码；合约部署区块不等于官方公开开盘时间。
+                      </p>
+                    </div>
+                    <div class="launch-feed-panel">
+                      <div class="monitor-status-heading">
+                        <strong id="launch-feed-title">官方 API 发现</strong>
+                        <span class="small-tag" id="launch-feed-status"
+                          >未运行</span
+                        >
+                      </div>
+                      <p>
+                        官方
+                        <a
+                          href="https://api.imd.fun/launches?limit=10"
+                          target="_blank"
+                          rel="noreferrer"
+                          >/launches 接口 ↗</a
+                        >
+                        <span id="launch-feed-description"
+                          >发现启动后新变为可交易的主网项目，自动核对代币、池、Hook
+                          和链上回执。全部检查通过且已启动实盘后，可直接触发买入。</span
+                        >
+                      </p>
+                      <div class="launch-feed-meta" aria-live="polite">
+                        <span id="launch-feed-time">最近读取 · 尚无记录</span>
+                        <span id="launch-feed-cache">接口缓存 · 未读取</span>
+                      </div>
+                    </div>
+                    <details class="advanced-settings">
+                      <summary>高级监听设置<span>＋</span></summary>
+                      <div class="input-grid">
+                        <label class="field"
+                          ><span>轮询间隔</span>
+                          <div class="input-unit">
+                            <input
+                              id="pollIntervalMs"
+                              name="pollIntervalMs"
+                              type="number"
+                              min="1000"
+                              max="60000"
+                              step="1"
+                              required
+                            /><span>毫秒</span>
+                          </div>
+                          <small
+                            >用于后备查询；过短可能触发服务商限速</small
+                          ></label
+                        >
+                      </div>
+                    </details>
+                    <div class="key-note">
+                      <span>⌑</span>
+                      <p>
+                        服务商地址如包含访问密钥，仅保存在本地配置中，请勿分享。钱包导入步骤见上方「执行钱包」。
+                      </p>
+                    </div>
+                  </div>
+                </section>
+                <div class="save-bar">
+                  <span id="save-state">正在读取配置…</span
+                  ><button
+                    id="save-button"
+                    class="button secondary"
+                    type="submit"
+                  >
+                    <span>↳</span> 保存配置
+                  </button>
+                </div>
+              </div>
+
+              <aside class="execution-column">
+                <section class="panel execution-panel">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="live-indicator"></span>
+                      <h2>执行控制</h2>
+                    </div>
+                    <span class="small-tag">一次买入</span>
+                  </div>
+                  <div class="panel-body">
+                    <div class="target-summary">
+                      <span class="mini-label">目标</span>
+                      <h3 id="target-title">
+                        启动后第一个<br />符合条件的新主网币
+                      </h3>
+                      <p>监听 → 条件过滤 → 报价核验 → 买入</p>
+                    </div>
+                    <div class="execution-state">
+                      <span id="phase-label">等待启动</span>
+                      <p id="phase-detail">读取实际执行状态后显示。</p>
+                    </div>
+                    <div class="budget-summary">
+                      <div>
+                        <span>买入金额</span
+                        ><strong><span id="summary-buy">—</span> ETH</strong>
+                      </div>
+                      <div>
+                        <span>Gas 预算上限</span
+                        ><strong><span id="summary-gas">—</span> ETH</strong>
+                      </div>
+                      <div class="budget-total">
+                        <span>预算合计上限</span
+                        ><strong><span id="summary-total">—</span> ETH</strong>
+                      </div>
+                    </div>
+                    <button
+                      class="button secondary full-width"
+                      id="check-button"
+                      type="button"
+                    >
+                      检查实盘就绪状态 <span>↗</span>
+                    </button>
+                    <div class="live-controls">
+                      <label class="live-consent"
+                        ><input id="live-consent" type="checkbox" /><span
+                          >我确认按当前显示的参数和钱包自动签名并提交真实买入交易。</span
+                        ></label
+                      ><button
+                        class="button live-button full-width"
+                        id="live-button"
+                        type="button"
+                        disabled
+                      >
+                        启动实盘
+                      </button>
+                    </div>
+                    <button
+                      class="button stop-button full-width"
+                      id="stop-button"
+                      type="button"
+                      disabled
+                    >
+                      ■ 停止监听
+                    </button>
+                    <p class="stop-note">停止监听不会撤销已广播的交易。</p>
+                  </div>
+                </section>
+
+                <section class="panel readiness-panel" id="readiness">
+                  <div class="panel-heading">
+                    <div><h2>实盘就绪检查</h2></div>
+                    <span id="readiness-count" class="small-tag">待检查</span>
+                  </div>
+                  <div class="panel-body">
+                    <div id="readiness-list" class="readiness-list">
+                      <p class="empty-copy">读取服务端校验结果后显示。</p>
+                    </div>
+                  </div>
+                </section>
+                <section class="flow-panel">
+                  <span class="mini-label">框架如何响应</span>
+                  <ol class="flow-list">
+                    <li>
+                      <span>01</span>
+                      <div>
+                        <strong>捕获新项目</strong>
+                        <p id="flow-discovery">
+                          官方 API 新主网项目 → 链上核对
+                        </p>
+                      </div>
+                    </li>
+                    <li>
+                      <span>02</span>
+                      <div>
+                        <strong>核对条件与交易</strong>
+                        <p>核对链上来源、滑点与 Gas 上限</p>
+                      </div>
+                    </li>
+                    <li>
+                      <span>03</span>
+                      <div>
+                        <strong>提交并等待回执</strong>
+                        <p>真实状态显示在运行记录中</p>
+                      </div>
+                    </li>
+                  </ol>
+                </section>
+              </aside>
+            </div>
+          </form>
+
+          <section
+            class="panel research-panel"
+            aria-labelledby="research-title"
+          >
+            <div class="panel-heading">
+              <div>
+                <h2 id="research-title">官方近期发射记录</h2>
+                <span class="small-tag">仅供观察</span>
+              </div>
+              <a
+                class="research-source"
+                href="https://api.imd.fun/launches?limit=10"
+                target="_blank"
+                rel="noreferrer"
+                >官方公开接口 ↗</a
+              >
+            </div>
+            <div class="research-description">
+              <p>
+                这里展示公开接口的真实记录，不代表已触发买入；测试网记录不会触发主网买入。
+              </p>
+              <span id="research-time">等待接口同步</span>
+            </div>
+            <div id="research-list" class="research-list">
+              <p class="empty-copy">尚未读取发射记录。启动监听后会定期刷新。</p>
+            </div>
+          </section>
+
+          <section class="panel activity-panel" id="activity">
+            <div class="panel-heading">
+              <div>
+                <h2>运行记录</h2>
+                <span id="log-count" class="small-tag">0 条</span>
+              </div>
+              <span class="panel-note" id="last-refresh">等待同步</span>
+            </div>
+            <div
+              id="activity-list"
+              class="activity-list"
+              role="log"
+              aria-label="服务端运行记录"
+            >
+              <div class="empty-state">
+                <span>⌁</span><strong>等待第一个信号</strong>
+                <p>启动监听后，这里会显示实际发现的项目和筛选结果。</p>
+              </div>
+            </div>
+          </section>
+          <footer class="page-footer">
+            <span
+              >IMD LAUNCH CONSOLE <span class="footer-divider">/</span> LOCAL
+              EXECUTION</span
+            ><span
+              >响应速度受节点、网络与区块打包影响，无法保证第一个成交。</span
+            >
+          </footer>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

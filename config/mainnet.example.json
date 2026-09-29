@@ -1,0 +1,37 @@
+{
+  "chainId": 1,
+  "verified": false,
+  "verifiedSource": "https://imd.fun/docs/",
+  "poolManager": {
+    "address": "REPLACE_WITH_VERIFIED_MAINNET_ADDRESS",
+    "codeHash": "REPLACE_WITH_RUNTIME_KECCAK256"
+  },
+  "router": {
+    "address": "REPLACE_WITH_VERIFIED_5_FIELD_V4_ROUTER",
+    "codeHash": "REPLACE_WITH_RUNTIME_KECCAK256"
+  },
+  "quoter": {
+    "address": "REPLACE_WITH_VERIFIED_MAINNET_ADDRESS",
+    "codeHash": "REPLACE_WITH_RUNTIME_KECCAK256"
+  },
+  "stateView": {
+    "address": "REPLACE_WITH_VERIFIED_MAINNET_ADDRESS",
+    "codeHash": "REPLACE_WITH_RUNTIME_KECCAK256"
+  },
+  "factories": [
+    {
+      "address": "REPLACE_WITH_IMD_MAINNET_FACTORY",
+      "codeHash": "REPLACE_WITH_RUNTIME_KECCAK256",
+      "autoStartSafe": false
+    }
+  ],
+  "registries": [
+    {
+      "address": "REPLACE_WITH_IMD_MAINNET_REGISTRY",
+      "codeHash": "REPLACE_WITH_RUNTIME_KECCAK256"
+    }
+  ],
+  "deployers": ["REPLACE_WITH_VERIFIED_LAUNCH_SENDER"],
+  "taxPolicies": [],
+  "relayUrl": "https://relay.flashbots.net"
+}

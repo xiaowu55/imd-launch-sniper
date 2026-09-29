@@ -1,0 +1,90 @@
+{
+  "purpose": "Read-only research reference. NOT a runnable live configuration. Testnet addresses MUST NOT be copied into Ethereum mainnet config.",
+  "evidence": {
+    "observedAt": "2026-09-28T16:14:35.551270+00:00",
+    "rpc": "https://sepolia.rpc.sentio.xyz",
+    "chainId": 11155111,
+    "observedBlock": 11801641
+  },
+  "chainId": 11155111,
+  "deployer": "0x09ec38170e94532eddb57c69dfc4f1fdcd0d4a60",
+  "contracts": {
+    "projectFactory": {
+      "address": "0x770e474e3d4eb5d8cdfd45ba2dea9a02ed5fc9fd",
+      "runtimeCodeHash": "0xdb4406baf102d9228e941a20ccf48864ee5ba3af19753eb2ca252b50d690d122",
+      "runtimeCodeBytes": 12012
+    },
+    "projectRegistry": {
+      "address": "0xb4cd04dcf5965c071ddbde8d4e2f4e4a7a4903f0",
+      "runtimeCodeHash": "0x517e3ddb7f740c7d5d0ce63d6493bb74e60b45e0fe4f21d6c4464728f2103649",
+      "runtimeCodeBytes": 3550
+    },
+    "hookFactory": {
+      "address": "0xa6b1728c29eb4300e306b63f5c7ec2edfc2ef7c5",
+      "runtimeCodeHash": "0x71ddc912e0f9dd23f044bfc6715cbaa9b074fa05dd836fbf3e86b9c5578a898d",
+      "runtimeCodeBytes": 10789
+    },
+    "hookRegistry": {
+      "address": "0xbf159c0bcda5175eb58ec97db3e783239ff681c0",
+      "runtimeCodeHash": "0x3159d65e4fdf99f65bd624a94c5bf59e7d53490e3e7304911aa4b2c95f1ffb81",
+      "runtimeCodeBytes": 3550
+    },
+    "poolManager": {
+      "address": "0xe03a1074c86cfedd5c142c4f04f1a1536e203543",
+      "runtimeCodeHash": "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1",
+      "runtimeCodeBytes": 24009
+    },
+    "universalRouter": {
+      "address": "0x3a9d48ab9751398bbfa63ad67599bb04e4bdf98b",
+      "runtimeCodeHash": "0x14f7c9253a5406bafa90cb512f4a2db2a10513886603e7a9b4a2e72329e944f4",
+      "runtimeCodeBytes": 19540
+    },
+    "quoter": {
+      "address": "0x61b3f2011a92d183c7dbadbda940a7555ccf9227",
+      "runtimeCodeHash": "0xf481a751ac453d40c46d12360b85b05472028c1b113ab63749d69a5f8b0e47d1",
+      "runtimeCodeBytes": 5820
+    },
+    "stateView": {
+      "address": "0xe1dd9c3fa50edb962e442f60dfbc432e24537e4c",
+      "runtimeCodeHash": "0xaaed3db8eb8ebde8014ce4c8a3938496687f4c6374e17a7d735288f6c65ceb9e",
+      "runtimeCodeBytes": 3531
+    }
+  },
+  "observedEvents": [
+    {
+      "name": "LaunchRecorded",
+      "abi": "event LaunchRecorded(uint64 indexed launchNumber, bytes32 indexed kind, bytes32 sourceCommit, bytes32 attestationHash, address[] artifacts, uint256[] lpTokenIds)",
+      "scope": "projectRegistry and hookRegistry",
+      "topic": "0x842d5f2a8e1a9d01abf8bc2b6269628d3a53f94e060e8fa6021414c5710382f0",
+      "verification": "Signature hash and field layout validated against successful chain receipts; full verified factory source/ABI not obtained."
+    },
+    {
+      "name": "ProjectLaunched",
+      "abi": "event ProjectLaunched(uint64 indexed launchNumber, address indexed token, address distributor, address[] contracts)",
+      "scope": "projectFactory",
+      "topic": "0x741a1c2d4c16867f237cdc43ea17f3c325c58f2838a7fa3880d8a167f25a0f96",
+      "verification": "Signature hash and field layout validated against successful chain receipts; full verified factory source/ABI not obtained."
+    },
+    {
+      "name": "Launched",
+      "abi": "event Launched(uint64 indexed launchNumber, address indexed token, address indexed hook, address distributor, uint128 liquidity)",
+      "scope": "hookFactory",
+      "topic": "0x81a480ee97308470997e0b8b5cbc5ed561408e4757971c1366ce3d55a28185a4",
+      "verification": "Signature hash and field layout validated against successful chain receipts; full verified factory source/ABI not obtained."
+    }
+  ],
+  "observedSelectors": {
+    "projectLaunch": "0x89fa0839",
+    "hookLaunch": "0x30478bf4",
+    "note": "Full call tuples unresolved. Do not decode pending launch input using invented ABI."
+  },
+  "sources": [
+    "https://imd.fun/docs/",
+    "https://api.imd.fun/launch/policies",
+    "https://api.imd.fun/launches?limit=500",
+    "https://api.imd.fun/reads/launch/01479536-860f-40ea-bfa5-79eace1533ef",
+    "https://api.imd.fun/reads/skill/frontend-for-contract",
+    "https://api.imd.fun/reads/skill/evm-project-launch",
+    "https://api.imd.fun/reads/skill/custom-token-launch"
+  ]
+}

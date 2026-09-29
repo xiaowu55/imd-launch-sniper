@@ -1,0 +1,22 @@
+{
+  "purpose": "Read-only eth_call simulations; no signing or broadcast. Existing public funded account supplied only as eth_call from.",
+  "observedAt": "2026-09-28T16:18:10.941Z",
+  "rpc": "https://sepolia.rpc.sentio.xyz",
+  "chainId": 11155111,
+  "blockNumber": "11801659",
+  "poolId": "0x4332c146dfc1892417a838206e25787fa686dc900121dd673cd7eb1768100997",
+  "poolKey": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0xf28caeef077a02824c2f1f3b9bd26275079f55df",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  "activeLiquidity": "0",
+  "amountIn": "1000000000000000",
+  "quoterAmountOut": "49627085152468411915572",
+  "quoterGasEstimate": "87366",
+  "minimumOut": "47145730894844991319793",
+  "execute5FieldEncodingSucceeded": true,
+  "simulationFrom": "0x09ec38170e94532eddb57c69dfc4f1fdcd0d4a60"
+}

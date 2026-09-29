@@ -1,0 +1,28 @@
+{
+  "name": "imd-launch-sniper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "check": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "research": "tsx scripts/research.ts",
+    "wallet:import": "tsx scripts/import-wallet.ts",
+    "rpc:check": "tsx scripts/check-public-rpc.ts"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.4",
+    "viem": "^2.56.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

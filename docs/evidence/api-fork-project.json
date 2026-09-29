@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-09-29T03:55:13.286Z",
+  "mode": "LOCAL_ANVIL_FORK_ONLY",
+  "publicNetworkWrites": false,
+  "publicNetworkFundsSpent": false,
+  "launchId": "01479536-860f-40ea-bfa5-79eace1533ef",
+  "source": "https://api.imd.fun/launches/01479536-860f-40ea-bfa5-79eace1533ef",
+  "stage": "fork-probe",
+  "candidate": {
+    "id": "11155111:426:0xf28caeef077a02824c2f1f3b9bd26275079f55df",
+    "token": "0xf28caeef077a02824c2f1f3b9bd26275079f55df",
+    "poolId": "0x4332c146dfc1892417a838206e25787fa686dc900121dd673cd7eb1768100997",
+    "pool": {
+      "currency0": "0x0000000000000000000000000000000000000000",
+      "currency1": "0xF28cAEef077a02824c2F1F3B9bD26275079f55dF",
+      "fee": 3000,
+      "tickSpacing": 60,
+      "hooks": "0x0000000000000000000000000000000000000000"
+    },
+    "launchNumber": 426,
+    "kind": "evm_project",
+    "launchTxHash": "0xac83707d5b74febc20645eddddfd970dba3a522cc8b081998a08cb3fcbd72291",
+    "blockNumber": "11797418",
+    "blockHash": "0xaea0b03860465370332a4603772ea73e5fd30d80310090371201b87010cae646",
+    "transactionIndex": 108,
+    "logIndex": 112
+  },
+  "ok": true,
+  "probe": {
+    "kind": "fork-observation",
+    "observedAtBlock": "11801659",
+    "observedBlockHash": "0x10bd6a1c68533bd37deeeb9b7bec6e0f3a8fb5dd4868b3ed839f3dbce0d3e433",
+    "sourceChainId": 11155111,
+    "forkChainId": 11155111,
+    "account": "0x0000000000000000000000000000000000012345",
+    "amountIn": "1000000000000000",
+    "buyTaxBps": 0,
+    "sellTaxBps": 0,
+    "buyReceived": "49627085152468411915572",
+    "sellReceived": "994009184986669",
+    "buyQuote": "49627085152468411915572",
+    "sellQuote": "994009184986669",
+    "buyQuoteShortfallBps": 0,
+    "sellQuoteShortfallBps": 0,
+    "buyPoolFeePips": 3000,
+    "sellPoolFeePips": 3000,
+    "codeHashes": {
+      "token": "0x9b4f15b0e23de88cb6ea3244a43debe851802520a2cd6d2ddcab0b56555f4909",
+      "hook": null,
+      "router": "0x14f7c9253a5406bafa90cb512f4a2db2a10513886603e7a9b4a2e72329e944f4",
+      "poolManager": "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1",
+      "quoter": "0xf481a751ac453d40c46d12360b85b05472028c1b113ab63749d69a5f8b0e47d1"
+    },
+    "semantics": "Observed round trip at one forked state, using the supplied account and amount. Tax is net deduction outside the core pool swap; core LP/protocol fees are reported separately. Hook-selected dynamic core fees are included in those core fees. Gas is removed from ETH deltas. This does not prove immutable taxes, honest balanceOf, future sellability, or identical future state."
+  },
+  "elapsedMs": 8224
+}

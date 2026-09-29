@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+runtime/
+*.log
+.DS_Store
+
+# Local reviewed deployments, backups and wallet material are never publication inputs.
+config/mainnet.json
+*.pem
+*.key
+*.keystore
+*.bak
+coverage/
