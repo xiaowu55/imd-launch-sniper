@@ -15,7 +15,8 @@
     "wallet:import": "tsx scripts/import-wallet.ts",
     "rpc:check": "tsx scripts/check-public-rpc.ts",
     "rpc:benchmark": "tsx scripts/benchmark-rpc.ts",
-    "testnet": "tsx scripts/testnet-buy.ts"
+    "testnet": "tsx scripts/testnet-buy.ts",
+    "testnet:watch": "tsx scripts/testnet-watch.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.4",
