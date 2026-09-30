@@ -6,8 +6,7 @@ const block = z.object({
   number: z.string().regex(/^[1-9]\d{0,19}$/),
   hash: z.string().regex(/^0x[\da-fA-F]{64}$/),
 }).strict();
-const observationSchema = z.object({
-  version: z.literal(1),
+const observationFields = {
   chainId: z.literal(TESTNET_CHAIN_ID),
   startedAt: z.iso.datetime(),
   deadlineAt: z.iso.datetime(),
@@ -20,7 +19,11 @@ const observationSchema = z.object({
     firstSeenHead: block,
     listCacheMaxAgeSeconds: z.number().int().nonnegative().max(86400).nullable(),
   }).strict(),
-}).strict();
+};
+const observationSchema = z.discriminatedUnion("version", [
+  z.object({ version: z.literal(1), ...observationFields }).strict(),
+  z.object({ version: z.literal(2), mode: z.literal("continuous"), ...observationFields }).strict(),
+]);
 
 export type FreshObservation = z.infer<typeof observationSchema>;
 
@@ -36,7 +39,10 @@ export function validateFreshObservation(
   const start = Date.parse(value.startedAt);
   const deadline = Date.parse(value.deadlineAt);
   const seen = Date.parse(value.discovery.firstSeenAt);
-  if (!Number.isFinite(nowMs) || deadline <= start || deadline - start > 30 * 60 * 1000 ||
+  const invalidDuration = value.version === 1
+    ? deadline <= start || deadline - start > 30 * 60 * 1000
+    : deadline <= seen || deadline - seen > 120000;
+  if (!Number.isFinite(nowMs) || invalidDuration ||
       nowMs < start || nowMs >= deadline || seen < start || seen > nowMs || seen >= deadline)
     throw new Error("fresh_observation_expired");
   if (value.discovery.launchId.toLowerCase() !== launchId.toLowerCase() ||
@@ -49,6 +55,31 @@ export function validateFreshObservation(
   if (launchBlock !== undefined && launchBlock > BigInt(value.discovery.firstSeenHead.number))
     throw new Error("fresh_discovery_head_before_launch");
   return value;
+}
+
+/** A continuous-mode observation is only actionable while its monitor owns this selection. */
+export function validateContinuousMonitor(input: unknown, observation: FreshObservation): void {
+  const parsed = z.object({
+    mode: z.literal("continuous"), phase: z.literal("buying"),
+    chainId: z.literal(TESTNET_CHAIN_ID), selectedLaunchId: z.uuid(),
+    startedAt: z.iso.datetime(), anchor: block,
+  }).passthrough().safeParse(input);
+  if (observation.version !== 2 || !parsed.success ||
+      parsed.data.selectedLaunchId.toLowerCase() !== observation.discovery.launchId.toLowerCase() ||
+      parsed.data.startedAt !== observation.startedAt ||
+      parsed.data.anchor.number !== observation.anchor.number || parsed.data.anchor.hash !== observation.anchor.hash)
+    throw new Error("continuous_monitor_not_authorized");
+}
+
+/** Cached API discovery cannot make an old on-chain launch fresh again. */
+export function validateContinuousLaunchAge(launchTimestamp: bigint, headTimestamp: bigint, nowMs: number): void {
+  if (!Number.isFinite(nowMs) || nowMs < 0) throw new Error("continuous_launch_stale");
+  const wallTimestamp = BigInt(Math.floor(nowMs / 1000));
+  if (launchTimestamp <= 0n || headTimestamp < launchTimestamp ||
+      headTimestamp - launchTimestamp > 120n || wallTimestamp - launchTimestamp > 120n ||
+      wallTimestamp - headTimestamp > 60n || launchTimestamp > wallTimestamp + 15n ||
+      headTimestamp > wallTimestamp + 15n)
+    throw new Error("continuous_launch_stale");
 }
 
 /** Reject stale selection if the official API withdraws it or presents another live ID. */

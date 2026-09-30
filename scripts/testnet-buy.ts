@@ -21,13 +21,14 @@ import {
   TESTNET_CHAIN_ID, TESTNET_MAX_GAS_WEI, TESTNET_SLIPPAGE_BPS,
   type TestnetTransaction,
 } from "./testnet-policy.js";
-import { validateFreshLiveSet, validateFreshObservation, type FreshObservation } from "./testnet-fresh-policy.js";
+import { validateContinuousLaunchAge, validateContinuousMonitor, validateFreshLiveSet, validateFreshObservation, type FreshObservation } from "./testnet-fresh-policy.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DIRECTORY = resolve(ROOT, "runtime/testnet");
 const WALLET = resolve(DIRECTORY, "wallet.env");
 let evidenceDirectory = DIRECTORY;
 let fresh = false;
+let continuous = false;
 let freshMonotonicDeadline: number | undefined;
 const clockOrigin = { id: randomUUID(), at: new Date().toISOString(), mono: performance.now() };
 const RPC_URLS = [
@@ -70,18 +71,36 @@ function saveEvidence(name: string, value: unknown) {
   }
 }
 
-function readFreshObservation(id: string, launchBlock?: bigint): FreshObservation {
-  const path = resolve(DIRECTORY, "fresh/observation.json");
+function readLocalJson(path: string, maxBytes = 1_000_000): unknown {
   const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const stat = fstatSync(fd);
-    if (!stat.isFile() || stat.size > 1_000_000 ||
+    if (!stat.isFile() || stat.size > maxBytes ||
         (process.getuid && stat.uid !== process.getuid())) throw new Error("fresh_observation_invalid");
-    const observation = validateFreshObservation(JSON.parse(readFileSync(fd, "utf8")), id, Date.now(), launchBlock);
-    freshMonotonicDeadline ??= performance.now() + Math.max(0, Date.parse(observation.deadlineAt) - Date.now());
-    checkFreshDeadline(observation);
-    return observation;
+    return JSON.parse(readFileSync(fd, "utf8"));
   } finally { closeSync(fd); }
+}
+
+function checkContinuousConsent(observation: FreshObservation) {
+  if (!continuous) return;
+  // Treat any STOP directory entry, including a dangling symlink, as an explicit stop.
+  try {
+    lstatSync(resolve(DIRECTORY, "continuous/STOP"));
+    throw new Error("continuous_stop_requested");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  validateContinuousMonitor(readLocalJson(resolve(DIRECTORY, "continuous/monitor.json"), 16_000_000), observation);
+}
+
+function readFreshObservation(id: string, launchBlock?: bigint): FreshObservation {
+  const observation = validateFreshObservation(
+    readLocalJson(resolve(evidenceDirectory, "observation.json")), id, Date.now(), launchBlock);
+  if (observation.version !== (continuous ? 2 : 1)) throw new Error("fresh_observation_invalid");
+  freshMonotonicDeadline ??= performance.now() + Math.max(0, Date.parse(observation.deadlineAt) - Date.now());
+  checkFreshDeadline(observation);
+  checkContinuousConsent(observation);
+  return observation;
 }
 
 function checkFreshDeadline(observation: FreshObservation) {
@@ -105,6 +124,7 @@ async function checkFreshObservation(
   // A network call cannot extend the explicitly authorized observation window.
   validateFreshObservation(current, id, Date.now(), launchBlock);
   checkFreshDeadline(current);
+  checkContinuousConsent(current);
 }
 
 function accountFromIsolatedFile(create: boolean) {
@@ -211,6 +231,7 @@ function readAttempt(address: Address, token: string | undefined): Attempt {
       throw new Error("fresh_observation_invalid");
     validateFreshObservation(raw.observation, raw.launchId,
       Date.parse(raw.observation.discovery.firstSeenAt), BigInt(raw.launchBlock.number));
+    if (raw.observation.version !== (continuous ? 2 : 1)) throw new Error("fresh_observation_invalid");
   }
   return raw;
 }
@@ -330,19 +351,30 @@ async function recheckLaunch(resolved: ResolvedApiLaunch<11155111>, client: Publ
     throw new Error("testnet_launch_receipt_changed");
 }
 
+async function checkContinuousLaunchAge(resolved: ResolvedApiLaunch<11155111>, client: PublicClient) {
+  if (!continuous) return;
+  const [launch, head] = await Promise.all([
+    client.getBlock({ blockNumber: resolved.candidate.blockNumber }), client.getBlock(),
+  ]);
+  if (launch.hash !== resolved.candidate.blockHash || head.number < launch.number)
+    throw new Error("testnet_launch_reorg");
+  validateContinuousLaunchAge(launch.timestamp, head.timestamp, Date.now());
+}
+
 async function main() {
   const [command, id, ...rest] = process.argv.slice(2);
-  if (!['prepare', 'status', 'buy', 'buy-fresh', 'status-fresh'].includes(command ?? '') || rest.length ||
-      ((command === 'status' || command === 'status-fresh') && id !== undefined) ||
+  if (!['prepare', 'status', 'buy', 'buy-fresh', 'status-fresh', 'buy-continuous', 'status-continuous'].includes(command ?? '') || rest.length ||
+      ((command === 'status' || command === 'status-fresh' || command === 'status-continuous') && id !== undefined) ||
       (id !== undefined && !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(id)) ||
-      ((command === 'buy' || command === 'buy-fresh') && !id)) {
-    output({ usage: "tsx scripts/testnet-buy.ts prepare [officialLaunchId] | status | buy <officialLaunchId> | buy-fresh <officialLaunchId> | status-fresh" });
+      ((command === 'buy' || command === 'buy-fresh' || command === 'buy-continuous') && !id)) {
+    output({ usage: "tsx scripts/testnet-buy.ts prepare [officialLaunchId] | status | buy <officialLaunchId> | buy-fresh <officialLaunchId> | status-fresh | buy-continuous <officialLaunchId> | status-continuous" });
     process.exitCode = 1;
     return;
   }
   stage = "testnet_wallet";
-  fresh = command === "buy-fresh" || command === "status-fresh";
-  evidenceDirectory = fresh ? resolve(DIRECTORY, "fresh") : DIRECTORY;
+  continuous = command === "buy-continuous" || command === "status-continuous";
+  fresh = continuous || command === "buy-fresh" || command === "status-fresh";
+  evidenceDirectory = continuous ? resolve(DIRECTORY, "continuous") : fresh ? resolve(DIRECTORY, "fresh") : DIRECTORY;
   privateDirectory(resolve(ROOT, "runtime"));
   privateDirectory(DIRECTORY);
   privateDirectory(evidenceDirectory);
@@ -366,13 +398,19 @@ async function main() {
       walletFile: "runtime/testnet/wallet.env", funded: balance > TESTNET_BUY_WEI,
       rpcUrls: RPC_URLS,
     });
-    if (command === "status" || command === "status-fresh") {
+    if (command === "status" || command === "status-fresh" || command === "status-continuous") {
       if (journal.state.txHash) await completeReceipt(journal, client, account.address, false);
       return;
     }
-    const otherDirectory = fresh ? resolve(DIRECTORY, "live") : resolve(DIRECTORY, "fresh/live");
-    if (existsSync(otherDirectory) && !["idle", "confirmed", "failed"].includes(new Journal(otherDirectory).state.phase))
-      throw new Error("testnet_other_attempt_unsettled");
+    for (const otherDirectory of [resolve(DIRECTORY, "live"), resolve(DIRECTORY, "fresh/live"), resolve(DIRECTORY, "continuous/live")]) {
+      if (otherDirectory === resolve(evidenceDirectory, "live")) continue;
+      if (existsSync(otherDirectory)) {
+        const phase = new Journal(otherDirectory).state.phase;
+        if (fresh && otherDirectory !== resolve(DIRECTORY, "live") && phase !== "idle")
+          throw new Error("testnet_fresh_budget_already_attempted");
+        if (!["idle", "confirmed", "failed"].includes(phase)) throw new Error("testnet_other_attempt_unsettled");
+      }
+    }
     if (journal.state.phase !== "idle") throw new Error("testnet_already_attempted_use_status");
     if (!id) return;
     let observation: FreshObservation | undefined;
@@ -442,8 +480,12 @@ async function main() {
       stage = "fresh_pre_claim_validation";
       await checkFreshObservation(observation, id, clients, resolved.candidate.blockNumber);
       await checkFreshApi(observation, attempt, "before_claim");
+      await checkContinuousLaunchAge(resolved, client);
+      checkFreshDeadline(observation);
+      checkContinuousConsent(observation);
     }
     saveEvidence("attempt.json", attempt);
+    if (observation) checkContinuousConsent(observation);
     if (!journal.claim(`sepolia:${id}`, resolved.candidate.token))
       throw new Error("testnet_already_attempted_use_status");
     stage = "testnet_signature";
@@ -462,14 +504,19 @@ async function main() {
       await checkFreshObservation(observation, id, clients, resolved.candidate.blockNumber);
       await recheckLaunch(resolved, client);
       await checkFreshApi(observation, attempt, "before_broadcast");
+      await checkContinuousLaunchAge(resolved, client);
       validateFreshObservation(observation, id, Date.now(), resolved.candidate.blockNumber);
       checkFreshDeadline(observation);
+      checkContinuousConsent(observation);
     }
     stage = "broadcast";
     stamp(attempt, "broadcastStartedAt");
     // One identical signed payload on both transports: never a second nonce or buy.
     const results = await Promise.allSettled(clients.map(async (endpoint) => {
-      if (observation) checkFreshDeadline(observation);
+      if (observation) {
+        checkFreshDeadline(observation);
+        checkContinuousConsent(observation);
+      }
       const hash = await endpoint.sendRawTransaction({ serializedTransaction: raw });
       if (hash !== txHash) throw new Error("testnet_broadcast_hash_mismatch");
       stamp(attempt, "firstRpcAcceptedAt");
@@ -493,11 +540,13 @@ async function main() {
       "testnet_other_attempt_unsettled", "fresh_observation_invalid", "fresh_observation_expired",
       "fresh_launch_not_new", "fresh_launch_before_anchor", "fresh_observation_changed", "fresh_observation_reorg",
       "fresh_discovery_head_before_launch", "fresh_candidate_withdrawn", "fresh_api_candidates_changed",
+      "continuous_stop_requested", "continuous_monitor_not_authorized",
+      "continuous_launch_stale", "testnet_fresh_budget_already_attempted",
     ]);
     output({ error: `Testnet command stopped at ${stage}.`,
       code: error instanceof Error && safeCodes.has(error.message) ? error.message : "testnet_check_failed",
       journal: journal.state,
-      next: journal.state.txHash ? `Run ${fresh ? "status-fresh" : "status"} to check the existing transaction; do not reset the journal or repeat the buy.` :
+      next: journal.state.txHash ? `Run ${continuous ? "status-continuous" : fresh ? "status-fresh" : "status"} to check the existing transaction; do not reset the journal or repeat the buy.` :
         "Check Sepolia RPC availability, the official launch, and testnet wallet funding. No transaction was broadcast.",
     });
     process.exitCode = 1;

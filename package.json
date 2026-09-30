@@ -16,7 +16,10 @@
     "rpc:check": "tsx scripts/check-public-rpc.ts",
     "rpc:benchmark": "tsx scripts/benchmark-rpc.ts",
     "testnet": "tsx scripts/testnet-buy.ts",
-    "testnet:watch": "tsx scripts/testnet-watch.ts"
+    "testnet:watch": "tsx scripts/testnet-watch.ts",
+    "testnet:continuous": "tsx scripts/testnet-continuous.ts",
+    "testnet:service": "tsx scripts/testnet-service.ts",
+    "testnet:supervisor": "tsx scripts/testnet-supervisor.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.4",

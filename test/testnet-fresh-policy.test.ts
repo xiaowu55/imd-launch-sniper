@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateFreshLiveSet, validateFreshObservation, type FreshObservation } from "../scripts/testnet-fresh-policy.js";
+import { validateContinuousLaunchAge, validateContinuousMonitor, validateFreshLiveSet, validateFreshObservation, type FreshObservation } from "../scripts/testnet-fresh-policy.js";
 
 const id = "a36cb67d-208f-4149-a31a-4a55cac4833c";
 const older = "cd74e008-6a11-47be-b242-012cc4529697";
@@ -52,4 +52,42 @@ test("fresh observation fails closed on wrong chain, malformed evidence and bloc
   assert.throws(() => validateFreshObservation({ ...input, discovery: undefined }, id, start + 2000), /fresh_observation_invalid/);
   assert.throws(() => validateFreshObservation({ ...input, discovery: { ...input.discovery, firstSeenHead: { ...input.discovery.firstSeenHead, number: "11799999" } } }, id, start + 2000), /fresh_launch_before_anchor/);
   assert.throws(() => validateFreshObservation({ ...input, allowOldTokens: true }, id, start + 2000), /fresh_observation_invalid/);
+});
+
+test("continuous observation permits an older monitor anchor with only a 120-second candidate window", () => {
+  const seen = start + 3 * 86400000;
+  const continuous = {
+    ...input, version: 2, mode: "continuous",
+    deadlineAt: new Date(seen + 120000).toISOString(),
+    discovery: { ...input.discovery, firstSeenAt: new Date(seen).toISOString() },
+  };
+  assert.equal(validateFreshObservation(continuous, id, seen + 1000, 11800001n).version, 2);
+  assert.throws(() => validateFreshObservation(continuous, id, seen + 120000), /fresh_observation_expired/);
+  assert.throws(() => validateFreshObservation({ ...continuous, deadlineAt: new Date(seen + 120001).toISOString() }, id, seen + 1000), /fresh_observation_expired/);
+  assert.throws(() => validateFreshObservation({ ...continuous, deadlineAt: new Date(seen).toISOString() }, id, seen), /fresh_observation_expired/);
+  assert.throws(() => validateFreshObservation({ ...continuous, mode: "manual" }, id, seen), /fresh_observation_invalid/);
+  assert.throws(() => validateFreshObservation({ ...continuous, discovery: { ...continuous.discovery, firstSeenAt: new Date(start - 1).toISOString() } }, id, seen), /fresh_observation_expired/);
+});
+
+test("continuous buy consent must match the active monitor selection and observation anchor", () => {
+  const observation = validateFreshObservation({ ...input, version: 2, mode: "continuous", deadlineAt: new Date(start + 121000).toISOString() }, id, start + 2000);
+  const monitor = { mode: "continuous", phase: "buying", chainId: 11155111, selectedLaunchId: id,
+    startedAt: observation.startedAt, anchor: observation.anchor };
+  validateContinuousMonitor(monitor, observation);
+  for (const patch of [{ phase: "watching" }, { phase: "stopped" }, { selectedLaunchId: older }, { mode: "finite" },
+    { chainId: 1 }, { startedAt: new Date(start - 1000).toISOString() }, { anchor: { ...input.anchor, number: "11799999" } }])
+    assert.throws(() => validateContinuousMonitor({ ...monitor, ...patch }, observation), /continuous_monitor_not_authorized/);
+  assert.throws(() => validateContinuousMonitor(monitor, input), /continuous_monitor_not_authorized/);
+});
+
+test("continuous age checks reject delayed API launches, stale chain heads, and future skew", () => {
+  const wall = BigInt(Math.floor(start / 1000));
+  validateContinuousLaunchAge(wall - 120n, wall - 60n, start);
+  validateContinuousLaunchAge(wall, wall + 15n, start);
+  assert.throws(() => validateContinuousLaunchAge(wall - 121n, wall, start), /continuous_launch_stale/);
+  assert.throws(() => validateContinuousLaunchAge(wall - 60n, wall + 61n, start), /continuous_launch_stale/);
+  assert.throws(() => validateContinuousLaunchAge(wall - 100n, wall - 61n, start), /continuous_launch_stale/);
+  assert.throws(() => validateContinuousLaunchAge(wall + 16n, wall + 16n, start), /continuous_launch_stale/);
+  assert.throws(() => validateContinuousLaunchAge(wall, wall - 1n, start), /continuous_launch_stale/);
+  assert.throws(() => validateContinuousLaunchAge(wall, wall, Number.NaN), /continuous_launch_stale/);
 });

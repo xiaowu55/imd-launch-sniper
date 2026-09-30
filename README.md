@@ -104,6 +104,27 @@ npm run testnet -- status-fresh
 
 结果记录发行、首次 API 发现、报价、成交的区块以及签名和广播时间，核心指标为 `launchToBuyBlocks`。API 首次观察的本机时间与区块时间只能用于近似延迟；单调时钟耗时另列。测试网独立执行器增加了交叉核验，结果不能直接当作主网控制台的速度。流程及计时定义见 [新币观察说明](docs/TESTNET_WATCH.md)。
 
+### 持续监听
+
+持续模式没有 30 分钟截止，独立保存在 `runtime/testnet/continuous/`，保留前一轮记录。仍只对首个通过核验的新币尝试买入一次；随后继续记录发行，但不会自动买第二个。临时网络故障持续退避重试，重启保留起点、首次发现时间和已使用预算。发行时间超过 120 秒的候选会跳过，避免恢复连接后追买旧币。
+
+```sh
+# 启动独立后台进程，关闭对话后仍运行
+npm run testnet:supervisor -- start
+npm run testnet:supervisor -- status
+npm run testnet:continuous -- status
+# 查询已记录的持续模式交易
+npm run testnet -- status-continuous
+# 停止服务并留下持久 STOP 标记
+npm run testnet:supervisor -- stop
+```
+
+后台监督进程会在监听进程异常退出后尝试恢复；电脑关机、睡眠或断网期间不能实时监听。重启电脑后需要重新运行 `start`；停止后 `start` 不会清除 STOP 标记。也可前台运行 `npm run testnet:continuous -- start`，并自行配置进程管理。
+
+macOS 另提供 `testnet:service -- install|start|status|stop`，用于具备目录访问权限的 LaunchAgent 环境。实际在 Documents 目录部署时，macOS 可能阻止它访问工作目录和日志；服务被加载不等于监听已启动，必须核对 `monitor.json` 的成功查询时间。遇到这类限制使用上述后台监督进程，无须修改系统隐私权限。
+
+`monitor.json` 保存当前状态，`logs/YYYY-MM-DD.jsonl` 保存每次轮询、发现、错误及结果，`result.json` 保存实际交易回执与发行到成交的区块差。不需要 Codex 定时唤醒；用户询问时读取这些记录即可。
+
 ## 代码验证与审计
 
 ```sh
