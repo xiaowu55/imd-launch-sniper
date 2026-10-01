@@ -5,15 +5,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { setImmediate } from "node:timers";
-import { keccak256, parseEther, parseTransaction, recoverTransactionAddress, zeroAddress, type Address, type Hex, type PublicClient } from "viem";
+import { keccak256, decodeFunctionData, parseEther, parseTransaction, recoverTransactionAddress, zeroAddress, type Address, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { Engine, type ApiDependencies } from "../src/engine.js";
+import { Engine, type ApiDependencies, type ExecutionDependencies } from "../src/engine.js";
 import { configSchema, type Config, type Deployment } from "../src/config.js";
 import { ApiLaunchError, trustedUniswap } from "../src/api-launch.js";
 import { ApiSession, ApiHttpError } from "../src/api-session.js";
 import type { LaunchHint, LaunchSnapshot } from "../src/launch-feed.js";
 import { Journal } from "../src/journal.js";
-import { poolId } from "../src/v4.js";
+import { poolId, routerAbi } from "../src/v4.js";
 import type { Candidate, PoolKey } from "../src/types.js";
 
 const key = `0x${"11".repeat(32)}` as Hex;
@@ -41,6 +41,12 @@ async function advance(t: TestContext, milliseconds = 1000) { t.mock.timers.tick
 
 class Fixture {
   head = 100n;
+  nowMs?: number;
+  reviewed: Deployment | null = { ...deployment(), taxPolicies: [{ tokenCodeHash: codeHash, hookCodeHash: null, immutable: true, buyTaxBps: 0, sellTaxBps: 0, source: "Explicit public test fixture review" }] };
+  privateSubmissions: Hex[] = [];
+  privateError = false;
+  compatibilityOverride?: ApiDependencies["compatibility"];
+  privateOverride?: ExecutionDependencies["sendPrivate"];
   rows: LaunchHint[] = [];
   snapshots = 0;
   cacheMaxAgeSeconds: number | null = null;
@@ -81,6 +87,9 @@ class Fixture {
   } as unknown as PublicClient;
   create(config: Partial<Config> = {}) {
     const api: ApiDependencies = {
+      compatibility: async (options) => this.compatibilityOverride ? this.compatibilityOverride(options) : ({ ok: true, checkedAt: new Date().toISOString(), chainId: options.chainId,
+        sources: { capabilities: "https://api.imd.fun/requests/capabilities", policies: "https://api.imd.fun/launch/policies" },
+        advertisedChainIds: [1], policies: [], missingEvidence: [], checks: [{ name: "官方发射网络", ok: true, detail: "Fixture mainnet support" }] }),
       snapshot: async (): Promise<LaunchSnapshot> => {
         this.snapshots++; if (this.snapshotOverride) return this.snapshotOverride(); return { checkedAt: new Date().toISOString(), source: "https://api.imd.fun/launches?limit=500", cacheMaxAgeSeconds: this.cacheMaxAgeSeconds, launches: structuredClone(this.rows) };
       },
@@ -94,7 +103,20 @@ class Fixture {
       },
 
     };
-    const engine = new Engine(() => () => {}, api);
+    const engine = new Engine(() => () => {}, api, {
+      now: () => this.nowMs ?? Number(1_800_000_000n + 12n * this.head) * 1000,
+      loadReviewedDeployment: () => this.reviewed,
+      sendPrivate: async (request, options) => {
+        const { rawTransaction } = request;
+        this.privateSubmissions.push(rawTransaction);
+        if (this.privateOverride) return this.privateOverride(request, options);
+        request.signal?.throwIfAborted();
+        request.assertCanSubmit?.();
+        if (this.privateError) throw Error("mock relay unavailable");
+        this.broadcasts.push(rawTransaction);
+        return keccak256(rawTransaction);
+      },
+    });
     engine.config = configSchema.parse({ rpcHttpUrls: ["https://fixture.invalid"], rpcWsUrls: [], pollIntervalMs: 1000, ...config });
     engine.client = () => this.client;
     this.engines.push(engine);
@@ -124,7 +146,7 @@ async function isolated(t: TestContext, run: (fixture: Fixture) => Promise<void>
   }
 }
 
-test("API readiness and live arming require no IMD manifest or starting block", async (t) => {
+test("API readiness and live arming use reviewed policies without a manual starting block", async (t) => {
   await isolated(t, async (f) => {
     const engine = f.create();
     assert.equal(engine.config.discoverySource, "api");
@@ -303,14 +325,14 @@ test("permanent API evidence rejection is recorded without a quote", async (t) =
   });
 });
 
-test("API live mode reports unknown tax and has no runtime fork dependency", async (t) => {
+test("API live mode requires reviewed tax evidence and has no runtime fork dependency", async (t) => {
   await isolated(t, async (f) => {
     const engine = f.create({ taxCheck: "off" });
     const checks = await engine.check();
     assert.equal(checks.ok, true);
-    assert.match(checks.checks.find((item) => item.name === "税率状态")!.detail, /未检测/);
+    assert.match(checks.checks.find((item) => item.name === "代币审核证据")!.detail, /不可变/);
     await engine.start("live");
-    assert.ok(engine.logs.some((entry) => entry.event === "tax_check_disabled"));
+    assert.ok(engine.logs.some((entry) => entry.event === "token_safety_enabled"));
     f.publish(); await advance(t);
     assert.equal(f.broadcasts.length, 1);
   });
@@ -701,5 +723,156 @@ test("maximum safe Retry-After cannot overflow the mainnet cooldown deadline", a
     engine.stop(); await advance(t, 60_000);
     assert.equal(f.snapshots, snapshots);
     assert.deepEqual(f.broadcasts, []);
+  });
+});
+
+
+test("two-hour delayed launch is durably rejected without quoting or signing", async t => {
+  await isolated(t, async f => {
+    const engine = f.create(); await engine.start("live");
+    f.publish(1, 101n); f.head = 701n; await advance(t);
+    assert.equal(f.quotes.length, 0); assert.equal(f.privateSubmissions.length, 0);
+    assert.match(new ApiSession("live").state!.decisions[launchId(1)]!, /时效上限/);
+    engine.stop();
+    const restarted = f.create(); await restarted.start("live"); await advance(t);
+    assert.equal(f.privateSubmissions.length, 0);
+    assert.equal(new ApiSession("live").pending().length, 0);
+  });
+});
+
+test("wall clock rejects stale launch even if the RPC head is frozen", async t => {
+  await isolated(t, async f => {
+    const engine = f.create(); await engine.start("live"); f.publish();
+    f.nowMs = Number(1_800_000_000n + 12n * 101n + 121n) * 1000;
+    await advance(t);
+    assert.equal(f.privateSubmissions.length, 0);
+    assert.match(new ApiSession("live").state!.decisions[launchId(1)]!, /时效上限/);
+  });
+});
+
+test("launch expiry during gas preparation consumes the claim without submission or retry", async t => {
+  await isolated(t, async f => {
+    f.client.estimateGas = (async () => { f.head += 11n; return 100_000n; }) as typeof f.client.estimateGas;
+    const engine = f.create(); await engine.start("live"); f.publish(); await advance(t);
+    assert.equal(engine.state.phase, "failed");
+    assert.match(String(engine.state.reason), /时效上限/);
+    assert.equal(f.privateSubmissions.length, 0);
+    await assert.rejects(f.create().start("live"), /实盘检查未通过/);
+  });
+});
+
+test("fresh launch private transaction expires no later than launch lifetime", async t => {
+  await isolated(t, async f => {
+    const engine = f.create(); await engine.start("live"); f.publish(); f.head = 109n; await advance(t);
+    assert.equal(engine.state.phase, "confirmed", JSON.stringify(engine.logs));
+    assert.equal(f.privateSubmissions.length, 1);
+    const signed = parseTransaction(f.privateSubmissions[0]!);
+    const decoded = decodeFunctionData({ abi: routerAbi, data: signed.data! });
+    assert.equal(decoded.args[2], 1_800_000_000n + 12n * 101n + 120n);
+  });
+});
+
+test("private relay failure never invokes public send or automatically retries", async t => {
+  await isolated(t, async f => {
+    f.privateError = true;
+    let publicCalls = 0;
+    f.client.sendRawTransaction = (async () => { publicCalls++; throw Error("public transport forbidden"); }) as typeof f.client.sendRawTransaction;
+    const engine = f.create(); await engine.start("live"); f.publish(); await advance(t);
+    assert.equal(engine.state.phase, "uncertain");
+    assert.equal(f.privateSubmissions.length, 1); assert.equal(publicCalls, 0);
+    await advance(t); await assert.rejects(f.create().start("live"), /实盘检查未通过/);
+    assert.equal(f.privateSubmissions.length, 1);
+  });
+});
+
+test("API readiness requires local review and successful chain-qualified compatibility", async t => {
+  await isolated(t, async f => {
+    f.reviewed = null;
+    const engine = f.create();
+    assert.equal((await engine.check()).checks.find(c => c.name === "代币审核证据")!.ok, false);
+    await assert.rejects(engine.start("live"), /实盘检查未通过/);
+    assert.equal(f.privateSubmissions.length, 0);
+  });
+});
+
+test("API rejects unknown token code despite trusted launch identity", async t => {
+  await isolated(t, async f => {
+    const engine = f.create(); await engine.start("live");
+    f.publish(); f.codeOverrides.set(candidate().token.toLowerCase(), "0x6001"); await advance(t);
+    assert.match(new ApiSession("live").state!.decisions[launchId(1)]!, /审核证据/);
+    assert.equal(f.quotes.length, 0); assert.equal(f.privateSubmissions.length, 0);
+  });
+});
+
+test("code change after quote is caught by final pinned safety check", async t => {
+  await isolated(t, async f => {
+    f.client.estimateGas = (async () => { f.codeOverrides.set(candidate().token.toLowerCase(), "0x6001"); return 100_000n; }) as typeof f.client.estimateGas;
+    const engine = f.create(); await engine.start("live"); f.publish(); await advance(t);
+    assert.equal(engine.state.phase, "failed"); assert.equal(f.privateSubmissions.length, 0);
+  });
+});
+
+test("review evidence is snapshotted for a run, not replaced by a mutable local object", async t => {
+  await isolated(t, async f => {
+    const engine = f.create(); await engine.start("live");
+    f.reviewed!.taxPolicies[0]!.tokenCodeHash = keccak256("0x6001");
+    f.publish(); f.codeOverrides.set(candidate().token.toLowerCase(), "0x6001"); await advance(t);
+    assert.equal(f.privateSubmissions.length, 0);
+    assert.match(new ApiSession("live").state!.decisions[launchId(1)]!, /审核证据/);
+  });
+});
+
+
+test("a failed compatibility result cannot arm even if its detail checks are empty", async t => {
+  await isolated(t, async f => {
+    f.compatibilityOverride = async () => ({ ok: false, checkedAt: new Date().toISOString(), chainId: 1,
+      sources: { capabilities: "https://api.imd.fun/requests/capabilities", policies: "https://api.imd.fun/launch/policies" },
+      advertisedChainIds: [11155111], policies: [], checks: [], missingEvidence: ["Mainnet not supported"] });
+    const engine = f.create();
+    assert.equal((await engine.check()).ok, false);
+    await assert.rejects(engine.start("live"), /实盘检查未通过/);
+    assert.equal(engine.running, false); assert.equal(new Journal().state.phase, "idle");
+  });
+});
+
+test("stop aborts a pending protocol compatibility request and cannot arm later", async t => {
+  await isolated(t, async f => {
+    let observed: AbortSignal | undefined;
+    f.compatibilityOverride = async ({ signal }) => {
+      observed = signal;
+      await new Promise<void>(resolve => signal!.addEventListener("abort", () => resolve(), { once: true }));
+      throw Error("cancelled compatibility");
+    };
+    const engine = f.create(); const start = engine.start("live"); await settle();
+    assert.ok(observed); engine.stop(); assert.equal(observed.aborted, true);
+    await assert.rejects(start, /实盘检查未通过|启动已取消/);
+    assert.equal(engine.running, false); assert.equal(f.privateSubmissions.length, 0);
+  });
+});
+
+test("stop during private authentication aborts transport and preserves one-shot state", async t => {
+  await isolated(t, async f => {
+    let observed: AbortSignal | undefined; let dispatched = false;
+    f.privateOverride = async request => {
+      observed = request.signal;
+      await new Promise<void>(resolve => observed!.addEventListener("abort", () => resolve(), { once: true }));
+      request.signal!.throwIfAborted(); request.assertCanSubmit!();
+      dispatched = true; return keccak256(request.rawTransaction);
+    };
+    const engine = f.create(); await engine.start("live"); f.publish(); await advance(t);
+    assert.ok(observed); engine.stop(); await settle();
+    assert.equal(observed.aborted, true); assert.equal(dispatched, false);
+    assert.equal(new Journal().state.phase, "uncertain");
+    await assert.rejects(f.create().start("live"), /实盘检查未通过/);
+  });
+});
+
+test("zero selected private tip is rejected before signing", async t => {
+  await isolated(t, async f => {
+    f.client.getFeeHistory = (async () => ({ baseFeePerGas: [1n], gasUsedRatio: [0.6], oldestBlock: 100n, reward: [[0n]] })) as typeof f.client.getFeeHistory;
+    const engine = f.create(); await engine.start("live"); f.publish(); await advance(t);
+    // Fee selection may choose its configured positive fallback; any submitted tx must be positive.
+    if (f.privateSubmissions.length) assert.ok(parseTransaction(f.privateSubmissions[0]!).maxPriorityFeePerGas! > 0n);
+    else { assert.equal(engine.state.phase, "failed"); assert.equal(new Journal().state.txHash, undefined); }
   });
 });

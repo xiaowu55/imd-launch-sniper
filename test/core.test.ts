@@ -606,7 +606,7 @@ test(
           return { result: [1_000_000n, 50_000n] };
         },
       });
-      const engine = new Engine(() => () => {});
+      const engine = new Engine(() => () => {}, {}, { now: () => 1_800_000_000_000 });
       engine.config = configSchema.parse({
         discoverySource: "chain",
         startBlock: "100",
@@ -674,7 +674,7 @@ test("stop cancels startup while the chain ID check is still pending", async () 
 });
 
 test(
-  "multiple mock RPCs receive one identical signed purchase and restart refuses another",
+  "private sender receives one signed purchase, public RPCs receive none, and restart refuses another",
   { timeout: 5000 },
   async () => {
     await isolatedWorkspace(async () => {
@@ -710,15 +710,14 @@ test(
         }: {
           serializedTransaction: Hex;
         }) => {
-          sent.push(serializedTransaction);
-          return keccak256(serializedTransaction);
+          throw Error("Unexpected public broadcast");
         },
         waitForTransactionReceipt: async () => ({
           status: "success",
           blockNumber: 101n,
         }),
       });
-      const engine = new Engine(() => () => {});
+      const engine = new Engine(() => () => {}, {}, { now: () => 1_800_000_000_000, sendPrivate: async ({ rawTransaction }) => { sent.push(rawTransaction); return keccak256(rawTransaction); } });
       engine.config = configSchema.parse({
         discoverySource: "chain",
         startBlock: "100",
@@ -736,8 +735,7 @@ test(
         while (engine.state.phase !== "confirmed" && Date.now() < end)
           await new Promise((resolve) => setTimeout(resolve, 20));
         assert.equal(engine.state.phase, "confirmed");
-        assert.equal(sent.length, 2);
-        assert.equal(sent[0], sent[1]);
+        assert.equal(sent.length, 1);
         const tx = parseTransaction(sent[0]!);
         assert.equal(tx.chainId, 1);
         assert.equal(tx.nonce, 0);
@@ -756,7 +754,7 @@ test(
             ?.ok,
           false,
         );
-        assert.equal(sent.length, 2);
+        assert.equal(sent.length, 1);
       } finally {
         engine.stop();
         if (previousKey === undefined) delete process.env.TRADING_PRIVATE_KEY;
