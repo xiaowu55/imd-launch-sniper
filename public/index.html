@@ -340,7 +340,7 @@
                           /><span>%</span>
                         </div>
                         <small id="tax-buy-hint"
-                          >已审核的买入税率不得超过此值</small
+                          >API 模式未检测，税率阈值不生效</small
                         ></label
                       ><label class="field"
                         ><span>最高卖出税率</span>
@@ -357,14 +357,14 @@
                           /><span>%</span>
                         </div>
                         <small id="tax-sell-hint"
-                          >已审核的卖出税率不得超过此值</small
+                          >API 模式未检测，卖出能力未验证</small
                         ></label
                       >
                     </div>
                     <div class="inline-note" id="tax-check-note">
-                      <span id="tax-check-symbol">i</span>
+                      <span id="tax-check-symbol">!</span>
                       <p id="tax-check-detail">
-                        两种发现模式都要求代币与 Hook 匹配已审核的固定税率证据，并通过以上限制；证据缺失或不匹配则跳过。这不进行买卖模拟，也不保证未来可卖出。
+                        买卖税率未检测（不进行买卖模拟），卖出能力未验证，以上阈值不生效。仍按金额、Gas、池报价滑点与其他链上校验执行。
                       </p>
                     </div>
                     <label class="field"
@@ -380,7 +380,7 @@
                           required
                         /><span>秒</span>
                       </div>
-                      <small>从链上发射时间起计算；发现或签名前超过此时限会跳过，默认 120 秒。</small></label
+                      <small>从链上发射时间起计算；发现或签名前超过此时限会跳过，默认 120 秒。交易有效期也不会晚于此上限。</small></label
                     >
                     <details class="advanced-settings filter-advanced">
                       <summary>更多筛选条件<span>＋</span></summary>
@@ -448,6 +448,7 @@
                       <label
                         class="field full-width mode-conditional"
                         id="hook-whitelist-field"
+                        hidden
                         ><span>允许的 Hook 地址</span
                         ><textarea
                           id="allowedHooks"
@@ -484,7 +485,7 @@
                           链上合约监听（高级）
                         </option></select
                       ><small id="discovery-detail"
-                        >自动读取官方项目并核对链上回执。启动需官方支持主网，并在 config/mainnet.json 提供已审核的代币与 Hook 证据。</small
+                        >自动读取官方新主网代币、池和 Hook 信息并核对链上回执，无需手填发射合约、Hook 白名单或起始区块。可提前启动等待主网上线。</small
                       ></label
                     >
                     <div class="rpc-explainer">
@@ -493,7 +494,7 @@
                         <strong>不用自建节点，也能连接以太坊</strong>
                         <p>
                           RPC 是别人提供的以太坊节点服务。HTTP
-                          负责查询与交易预估，WebSocket
+                          负责查询与发送交易，WebSocket
                           接收实时消息。可使用免费公共节点或服务商提供的地址；共享节点适合观察和测试，有延迟与限速，不能保证最快买入。
                         </p>
                       </div>
@@ -512,7 +513,7 @@
                       ></textarea
                       ><small
                         >每行一个 Ethereum
-                        主网地址。查询按顺序主备切换；买入交易仅通过 Flashbots 私有通道提交，不回退到公开广播。</small
+                        主网地址。查询按顺序主备切换；广播同时发送同一笔签名交易，不会因此多买一次。</small
                       ></label
                     >
                     <label class="field full-width"
@@ -632,7 +633,7 @@
                           >/launches 接口 ↗</a
                         >
                         <span id="launch-feed-description"
-                          >发现新主网项目后，核对发射时间、审核证据、池和链上回执。全部检查通过后通过私有通道提交，不保证首买或成交。</span
+                          >发现新主网项目后，核对发射时间、官方身份、池和链上回执。全部检查通过且已启动实盘后，可触发一次买入；不保证首买或成交。</span
                         >
                       </p>
                       <div class="launch-feed-meta" aria-live="polite">
@@ -697,7 +698,7 @@
                       <h3 id="target-title">
                         启动后第一个<br />符合条件的新主网币
                       </h3>
-                      <p>监听 → 条件过滤 → 报价核验 → 私有提交</p>
+                      <p>监听 → 条件过滤 → 报价核验 → 广播买入</p>
                     </div>
                     <div class="execution-state">
                       <span id="phase-label">等待启动</span>
@@ -746,7 +747,7 @@
                     >
                       ■ 停止监听
                     </button>
-                    <p class="stop-note">仅向 Flashbots 提交，目标为下一个区块，过期不再提交；不保证首买或成交。停止监听不会撤回已提交的交易。</p>
+                    <p class="stop-note">多个 RPC 发送同一笔签名交易，不重签或追加买入；不保证首买或成交。停止监听不会撤销已广播的交易。</p>
                   </div>
                 </section>
 
@@ -777,13 +778,13 @@
                       <span>02</span>
                       <div>
                         <strong>核对条件与交易</strong>
-                        <p>核对发射时间、审核证据、滑点与 Gas 上限</p>
+                        <p>核对发射时间、链上来源、滑点与 Gas 上限</p>
                       </div>
                     </li>
                     <li>
                       <span>03</span>
                       <div>
-                        <strong>私有提交并等待回执</strong>
+                        <strong>广播并等待回执</strong>
                         <p>真实状态显示在运行记录中</p>
                       </div>
                     </li>

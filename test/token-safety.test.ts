@@ -41,13 +41,13 @@ function setup(options: {
     },
   } as unknown as TokenSafetyContext["client"];
   const ctx: TokenSafetyContext = {
-    client, config: configSchema.parse(options.config ?? {}),
+    client, config: configSchema.parse({ discoverySource: "chain", ...options.config }),
     deployment: { taxPolicies: options.policies ?? [evidence()] },
   };
   return { ctx, reads };
 }
 
-test("readiness and candidate admission reject missing reviewed evidence before RPC", async () => {
+test("advanced chain admission rejects missing reviewed evidence before RPC", async () => {
   assert.equal(hasReviewedTokenSafetyEvidence(null), false);
   assert.equal(hasReviewedTokenSafetyEvidence(undefined), false);
   const { ctx, reads } = setup({ policies: [] });

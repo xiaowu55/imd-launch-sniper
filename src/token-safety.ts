@@ -23,13 +23,14 @@ function knownDelegatingCode(code: Hex): boolean {
 }
 
 /**
- * Apply operator-reviewed immutable token/Hook evidence to one pinned block.
+ * Apply the advanced chain mode's operator-reviewed immutable token/Hook
+ * evidence to one pinned block. This is not an API discovery prerequisite.
  * Call with the same policy snapshot at admission and again before signing.
  * `immutable` is an audit assertion about the complete token/Hook behavior,
  * including dependencies, upgrade paths and mutable tax controls. A runtime
  * hash alone cannot establish that assertion or prove future sellability.
- * API callers must retain their independently verified protocol deployment
- * and copy only taxPolicies from the local reviewed mainnet manifest.
+ * It covers code and tax evidence only; chain admission also checks the launch
+ * boundary and configured liquidity requirement in policy.ts.
  */
 export async function tokenSafetyEligibility(
   candidate: Candidate,

@@ -34,8 +34,6 @@ import { startChainSignals } from "./chain-signals.js";
 import { LaunchPreparation } from "./launch-preparation.js";
 import { assertFreshLaunch, launchDeadline, LaunchFreshnessError } from "./launch-freshness.js";
 import { tokenSafetyEligibility } from "./token-safety.js";
-import { sendPrivateTransaction } from "./private-broadcast.js";
-import { checkApiProtocolCompatibility } from "./protocol-compatibility.js";
 import {
   resolveApiLaunch,
   trustedUniswap,
@@ -63,7 +61,6 @@ export type MonitorStatus = {
 };
 export type ApiDependencies = {
   snapshot: typeof fetchApiBaseline;
-  compatibility: typeof checkApiProtocolCompatibility;
   resolve: (
     id: string,
     client: PublicClient,
@@ -72,8 +69,6 @@ export type ApiDependencies = {
 };
 export type ExecutionDependencies = {
   now: () => number;
-  sendPrivate: typeof sendPrivateTransaction;
-  loadReviewedDeployment: typeof loadDeployment;
 };
 export class Engine {
   config: Config = loadConfig();
@@ -102,9 +97,7 @@ export class Engine {
   private effectiveConfig?: Config;
   private runConfig?: Config;
   private runAccount?: ReturnType<typeof privateKeyToAccount>;
-  private runSafetyDeployment?: Deployment | null;
   private execution: ExecutionDependencies;
-  private executionController?: AbortController;
   private get settings(): Config {
     return (this.starting || this.running || this.busy) && this.runConfig
       ? this.runConfig
@@ -124,11 +117,10 @@ export class Engine {
     api: Partial<ApiDependencies> = {},
     execution: Partial<ExecutionDependencies> = {},
   ) {
-    this.execution = { now: () => Date.now(), sendPrivate: sendPrivateTransaction, loadReviewedDeployment: loadDeployment, ...execution };
+    this.execution = { now: () => Date.now(), ...execution };
     this.api = {
       snapshot: fetchApiBaseline,
       resolve: resolveApiLaunch,
-      compatibility: checkApiProtocolCompatibility,
       ...api,
     };
     this.resetMonitor();
@@ -139,7 +131,7 @@ export class Engine {
         status: "pending",
         source: "api-baseline",
         detail:
-          "官方 API 自动发现模式；启动时记住现有项目，只处理之后新出现且未过期的 Ethereum 主网发行，须具备主网支持与本地审核证据",
+          "官方 API 自动发现模式；启动时记住现有项目，只处理之后新出现且未过期的 Ethereum 主网发行，无需填写合约和区块",
       };
       return;
     }
@@ -213,7 +205,6 @@ export class Engine {
   async check() {
     if (this.settings.discoverySource === "api") return this.checkApi();
     const checks: Check[] = [];
-    checks.push(this.privateSubmissionCheck());
     let d: Deployment | null = null;
     try {
       d = loadDeployment();
@@ -342,12 +333,11 @@ export class Engine {
   }
   private async checkApi() {
     const checks: Check[] = [];
-    checks.push(this.privateSubmissionCheck());
     const validKey = !!this.walletAccount();
     checks.push({
       name: "钱包",
       ok: validKey,
-      detail: "实盘钱包只从本机读取；同时需要主网协议和代币审核证据",
+      detail: "只需在本机导入交易钱包；API 模式无需填写发射合约",
     });
     checks.push({
       name: "单次交易状态",
@@ -357,26 +347,18 @@ export class Engine {
     checks.push({
       name: "HTTP 节点",
       ok: this.settings.rpcHttpUrls.length > 0,
-      detail: "主网节点用于确认部署、报价与回执；签名交易只提交私有通道",
+      detail: "主网节点已预填，用于确认部署、报价与提交交易",
     });
     checks.push({
       name: "储备筛选",
       ok: parseEther(this.settings.minLiquidityEth) === 0n,
       detail: "独立池储备证据暂未接入；此门槛需保持 0",
     });
-    let reviewed: Deployment | null = null;
-    try { reviewed = this.starting ? this.runSafetyDeployment ?? null : this.execution.loadReviewedDeployment(); } catch {}
-    checks.push({ name: "代币审核证据", ok: !!reviewed?.taxPolicies.length,
-      detail: "须在 config/mainnet.json 提供已审核的不可变代币与 Hook 代码组合；未知税率拒绝，未来可卖性不作保证" });
-    try {
-      const compatibility = await this.api.compatibility({ chainId: 1, allowedKinds: this.settings.allowedKinds,
-        signal: this.starting ? this.executionController?.signal : undefined });
-      checks.push({ name: "主网协议兼容性", ok: compatibility.ok,
-        detail: compatibility.ok ? "官方主网发币能力和政策已核实；候选仍须单独校验" : "官方主网发币支持或政策证据未通过，禁止启动" });
-      checks.push(...compatibility.checks);
-    } catch {
-      checks.push({ name: "主网协议兼容性", ok: false, detail: "无法核实官方主网发币能力和政策，禁止启动" });
-    }
+    checks.push({
+      name: "税率状态",
+      ok: true,
+      detail: "未检测税率；按实盘专用设置不运行本地买卖模拟，税率阈值不生效",
+    });
     const rpcChecks = await Promise.all(
       this.settings.rpcHttpUrls.map(async (url, index): Promise<Check> => {
         try {
@@ -450,10 +432,6 @@ export class Engine {
     }
     this.readiness = { ok: checks.every((check) => check.ok), checks };
     return this.readiness;
-  }
-  private privateSubmissionCheck(): Check {
-    return { name: "私有交易提交", ok: parseGwei(this.settings.priorityFeeGwei) > 0n,
-      detail: "仅通过 Flashbots 私有通道提交，有效至下一块；要求正优先费，失败不回退公开广播，不保证收录或首笔" };
   }
   private applyApiSnapshot({ launches, ...snapshot }: LaunchSnapshot) {
     this.launchFeed = snapshot;
@@ -794,10 +772,7 @@ export class Engine {
     this.runConfig = Object.freeze(snapshot);
     this.runAccount = this.walletAccount();
     this.starting = true;
-    this.executionController = new AbortController();
     try {
-      this.runSafetyDeployment = this.settings.discoverySource === "api"
-        ? structuredClone(this.execution.loadReviewedDeployment()) : undefined;
       const generation = ++this.generation;
       this.mode = mode;
       this.lastScanned = undefined;
@@ -815,7 +790,7 @@ export class Engine {
       this.running = true;
       this.log("started", { mode });
       if (this.settings.discoverySource === "api") {
-        this.log("token_safety_enabled", { detail: "API 模式执行 Hook 白名单、不可变代码审核证据和税率上限；未知组合拒绝" });
+        this.log("tax_check_disabled", { detail: "未检测税率；实盘直接使用链上报价与限额，不运行本地买卖模拟" });
         await this.startApi(generation);
         return;
       }
@@ -872,6 +847,7 @@ export class Engine {
             maxBuyTaxBps: this.settings.maxBuyTaxBps,
             maxSellTaxBps: this.settings.maxSellTaxBps,
             minLiquidityEth: this.settings.minLiquidityEth,
+            maxLaunchAgeSeconds: this.settings.maxLaunchAgeSeconds,
           }),
         ),
       );
@@ -1048,11 +1024,8 @@ export class Engine {
   ) {
     if (poolId(candidate.pool) !== candidate.poolId)
       throw Error("Pool ID invalid");
-    const safetyDeployment = apiEvidence
-      ? { ...deployment, taxPolicies: this.runSafetyDeployment?.taxPolicies ?? [] }
-      : deployment;
     const rejected = apiEvidence
-      ? await tokenSafetyEligibility(candidate, { client, config: this.settings, deployment: safetyDeployment })
+      ? null
       : await eligibility(candidate, {
           client,
           config: this.effectiveConfig ?? this.settings,
@@ -1077,7 +1050,9 @@ export class Engine {
     if (candidate.blockNumber > this.activationHead) {
       try { assertFreshLaunch(launchBlock, initialHead, this.settings.maxLaunchAgeSeconds, this.execution.now()); }
       catch (error) {
-        if (!(error instanceof LaunchFreshnessError)) throw error;
+        // Inconsistent RPC evidence is not proof of expiry. Keep the first
+        // candidate unresolved and stop rather than permanently skipping it.
+        if (!(error instanceof LaunchFreshnessError) || error.code !== "expired") throw error;
         this.log("rejected", { token: candidate.token, launchNumber: candidate.launchNumber, reason: error.message });
         return error.message;
       }
@@ -1188,12 +1163,15 @@ export class Engine {
       if (apiEvidence) await this.verifyApiEvidence(candidate, client, deployment, new StageBlockReads());
       if (!this.running) throw Error("监听已停止");
       if (apiEvidence?.isCurrent && !apiEvidence.isCurrent()) throw Error("候选记录在交易准备期间改变，已停止");
-      // Check potentially slow token/Hook evidence before the final volatile snapshot.
-      const safetyHead = await client.getBlock();
-      const safetyRejection = await tokenSafetyEligibility(candidate, { client, config: c, deployment: safetyDeployment }, safetyHead.number);
-      if (safetyRejection) throw Error(safetyRejection);
+      // The advanced chain mode retains its reviewed-code policy. API mode
+      // verifies launch identity without requiring a manual token/Hook manifest.
+      const safetyHead = apiEvidence ? undefined : await client.getBlock();
+      if (safetyHead) {
+        const rejection = await tokenSafetyEligibility(candidate, { client, config: c, deployment }, safetyHead.number);
+        if (rejection) throw Error(rejection);
+      }
       const finalReads = new StageBlockReads();
-      const [finalHead, finalLaunch, finalQuote, nonce, pending, balance, chainId, finalSafety] = await settleChecks([
+      const [checkedHead, finalLaunch, finalQuote, nonce, pending, balance, chainId, finalSafety] = await settleChecks([
         finalReads.block(client),
         finalReads.block(client, candidate.blockNumber),
         finalReads.block(client, block.number),
@@ -1201,10 +1179,22 @@ export class Engine {
         client.getTransactionCount({ address: account.address, blockTag: "pending" }),
         client.getBalance({ address: account.address }),
         client.getChainId(),
-        finalReads.block(client, safetyHead.number),
+        safetyHead ? finalReads.block(client, safetyHead.number) : Promise.resolve(undefined),
       ] as const);
+      if (!this.running) throw Error("监听已停止");
+      // Nonce/balance/RPC fallbacks can span blocks. Refresh only after those
+      // checks settle, so fees and expiry use a current head rather than the
+      // snapshot that happened to finish first in the parallel batch.
+      const finalHead = await client.getBlock();
       if (chainId !== 1) throw Error("交易网络发生变化");
-      if (finalSafety.hash !== safetyHead.hash || finalHead.number < safetyHead.number) throw Error("代币审核区块发生重组或链头回退");
+      if (finalHead.number < checkedHead.number ||
+          (finalHead.number === checkedHead.number && finalHead.hash !== checkedHead.hash)) throw Error("最终链头发生重组或回退");
+      // A higher head can be on a different fork. Revalidate the previous
+      // snapshot's canonical anchor only when the chain has actually advanced.
+      if (finalHead.number > checkedHead.number &&
+          (await client.getBlock({ blockNumber: checkedHead.number })).hash !== checkedHead.hash)
+        throw Error("最终核验区块发生重组");
+      if (safetyHead && (finalSafety?.hash !== safetyHead.hash || finalHead.number < safetyHead.number)) throw Error("代币审核区块发生重组或链头回退");
       if (finalLaunch.hash !== candidate.blockHash || finalQuote.hash !== block.hash) throw Error("发币或报价区块发生重组");
       assertFreshLaunch(finalLaunch, finalHead, c.maxLaunchAgeSeconds, this.execution.now());
       if (finalHead.number < block.number || finalHead.timestamp >= deadline || BigInt(Math.floor(this.execution.now() / 1000)) >= deadline) throw Error("报价已过期");
@@ -1215,7 +1205,6 @@ export class Engine {
         baseFeePerGas: finalHead.baseFeePerGas ?? 0n, reward: history?.reward, gasUsedRatio: history?.gasUsedRatio,
       });
       const maxPriorityFeePerGas = fee.maxPriorityFeePerGas;
-      if (maxPriorityFeePerGas <= 0n) throw Error("私有交易需要正优先费；当前费用上限或估计无法满足");
       this.log("fee_selected", { strategy: c.feeStrategy, source: fee.source, priorityWei: maxPriorityFeePerGas.toString(), capped: fee.capped });
       if (!this.running) throw Error("监听已停止");
       if (apiEvidence?.isCurrent && !apiEvidence.isCurrent()) throw Error("候选记录在最终核验期间改变，已停止");
@@ -1239,22 +1228,21 @@ export class Engine {
         throw Error("候选记录在签名期间改变，禁止广播");
       assertFreshLaunch(finalLaunch, finalHead, c.maxLaunchAgeSeconds, this.execution.now());
       if (BigInt(Math.floor(this.execution.now() / 1000)) >= deadline) throw Error("报价已过期，禁止广播");
-      // Signed authority never reaches public read RPCs, including on relay errors.
+      // Identical signed payload / nonce to every checked RPC, never multiple buys.
+      // Do not add a relay-only next-block cutoff: slow reads or a missed block
+      // must not invalidate an otherwise fresh transaction before it is sent.
       try {
-        const hash = await this.execution.sendPrivate({
-          rawTransaction: raw, headBlockNumber: finalHead.number,
-          signal: this.executionController?.signal,
-          assertCanSubmit: () => {
-            if (!this.running || (apiEvidence?.isCurrent && !apiEvidence.isCurrent())) throw Error("提交条件已改变");
-            assertFreshLaunch(finalLaunch, finalHead, c.maxLaunchAgeSeconds, this.execution.now());
-            if (BigInt(Math.floor(this.execution.now() / 1000)) >= deadline) throw Error("报价已过期");
-          },
-        }, { maxBlockDistance: 1 });
-        if (hash !== txHash) throw Error("Hash mismatch");
+        await Promise.any(
+          c.rpcHttpUrls.map(async (url) => {
+            const hash = await this.client(url).sendRawTransaction({ serializedTransaction: raw });
+            if (hash !== txHash) throw Error("Hash mismatch");
+            return hash;
+          }),
+        );
       } catch {
         this.journal!.update({
           phase: "uncertain",
-          reason: "私有通道未返回成功；可能已提交，禁止公开回退或自动重试",
+          reason: "节点未返回成功；可能已广播，禁止自动重试",
         });
         throw Error("广播结果不确定");
       }
@@ -1292,7 +1280,7 @@ export class Engine {
       if (phase === "claimed")
         this.journal!.update({
           phase: "failed",
-          reason: e instanceof LaunchFreshnessError ? e.message : "首个候选预检或模拟失败，停止交易；检查审核证据、余额、Gas 和池状态",
+          reason: e instanceof LaunchFreshnessError ? e.message : "首个候选预检或报价失败，停止交易；检查余额、Gas 和池状态",
         });
       else if (phase === "signed" || phase === "broadcast")
         this.journal!.update({
@@ -1341,7 +1329,6 @@ export class Engine {
     this.cleanup(!this.busy);
   }
   private cleanup(closeJournal = true) {
-    this.executionController?.abort();
     this.running = false;
     this.stops.splice(0).forEach((stop) => stop());
     if (this.timer) clearInterval(this.timer);

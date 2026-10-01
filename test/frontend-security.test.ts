@@ -345,16 +345,37 @@ test("wallet changes during saving retain the originally confirmed address and s
   assert.equal(ui.calls.filter((call) => call.path === "/api/start").length, 1);
 });
 
-test("both discovery modes expose reviewed tax limits and the Hook allowlist without promising sellability", () => {
-  const ui = frontend();
+test("API mode preserves inactive tax and Hook settings and clearly marks them as unchecked", () => {
+  const saved = configSchema.parse({ maxBuyTaxBps: 125, maxSellTaxBps: 250, allowedHooks: [addressB] });
+  const ui = frontend(fixtureStatus(saved));
   assert(!ui.nodes.has("dry-run-button"));
   assert(!ui.nodes.has("taxCheck"));
   assert.equal(ui.exports.collect!().taxCheck, "off");
   for (const id of ["maxBuyTaxBps", "maxSellTaxBps", "allowedHooks"])
+    assert.equal(ui.nodes.get(id)!.disabled, true);
+  assert.equal(ui.nodes.get("hook-whitelist-field")!.hidden, true);
+  assert.match(ui.nodes.get("tax-check-detail")!.textContent, /税率未检测/);
+  assert.match(ui.nodes.get("tax-check-detail")!.textContent, /阈值不生效/);
+  assert.match(ui.nodes.get("tax-check-detail")!.textContent, /不进行买卖模拟/);
+  assert.match(ui.nodes.get("discovery-detail")!.textContent, /无需手填/);
+  assert.match(ui.nodes.get("discovery-detail")!.textContent, /提前启动等待主网上线/);
+  // Inactive DOM values must not replace the saved advanced-mode policy.
+  ui.nodes.get("maxBuyTaxBps")!.value = "49";
+  ui.nodes.get("maxSellTaxBps")!.value = "49";
+  ui.nodes.get("allowedHooks")!.value = addressA;
+  const collected = ui.exports.collect!();
+  assert.equal(collected.maxBuyTaxBps, 125);
+  assert.equal(collected.maxSellTaxBps, 250);
+  assert.deepEqual(Array.from(collected.allowedHooks), [addressB]);
+  assert(!html.includes("/Users/"));
+});
+
+test("advanced chain mode enables explicit reviewed tax limits and the Hook allowlist", () => {
+  const ui = frontend();
+  ui.input("discoverySource", "chain");
+  for (const id of ["maxBuyTaxBps", "maxSellTaxBps", "allowedHooks"])
     assert.equal(ui.nodes.get(id)!.disabled, false);
   assert.equal(ui.nodes.get("hook-whitelist-field")!.hidden, false);
-  assert.match(ui.nodes.get("tax-check-detail")!.textContent, /证据缺失或不匹配则跳过/);
-  assert.match(ui.nodes.get("tax-check-detail")!.textContent, /不保证未来可卖出/);
   ui.input("maxBuyTaxBps", "1.25");
   ui.input("maxSellTaxBps", "2.50");
   ui.input("allowedHooks", addressB);
@@ -362,17 +383,16 @@ test("both discovery modes expose reviewed tax limits and the Hook allowlist wit
   assert.equal(collected.maxBuyTaxBps, 125);
   assert.equal(collected.maxSellTaxBps, 250);
   assert.deepEqual(Array.from(collected.allowedHooks), [addressB]);
-  ui.input("discoverySource", "chain");
-  assert.equal(ui.nodes.get("maxBuyTaxBps")!.disabled, false);
   assert.match(
     ui.nodes.get("tax-check-detail")!.textContent,
     /已审核的固定税率/,
   );
-  assert(!html.includes("/Users/"));
+  assert.match(ui.nodes.get("tax-check-detail")!.textContent, /不保证未来可卖出/);
 });
 
 test("the launch age limit has a bounded default and changes invalidate live approval", async () => {
   const ui = frontend();
+  assert.match(html, /交易有效期也不会晚于此上限/);
   assert.equal(ui.nodes.get("maxLaunchAgeSeconds")!.value, "120");
   assert.equal(ui.exports.collect!().maxLaunchAgeSeconds, 120);
   for (const value of ["11", "301", "12.5", ""]) {
@@ -394,11 +414,13 @@ test("the launch age limit has a bounded default and changes invalidate live app
   assert.match(ui.nodes.get("feedback")!.textContent, /配置已变化/);
 });
 
-test("execution copy explains private-only next-block submission and its limits", () => {
-  assert.match(html, /仅通过 Flashbots 私有通道提交，不回退到公开广播/);
-  assert.match(html, /目标为下一个区块，过期不再提交/);
+test("execution copy describes one signed transaction sent to multiple public RPCs", () => {
+  assert.match(html, /广播同时发送同一笔签名交易/);
+  assert.match(html, /不重签或追加买入/);
   assert.match(html, /不保证首买或成交/);
-  assert(!html.includes("广播同时发送同一笔签名交易"));
+  assert(!html.includes("Flashbots"));
+  assert(!html.includes("私有提交"));
+  assert(!script.includes("私有交易已提交"));
 });
 
 function deferred<T>() {
