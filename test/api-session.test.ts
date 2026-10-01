@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Hex } from "viem";
-import { ApiSession, fetchApiBaseline } from "../src/api-session.js";
+import { ApiHttpError, ApiSession, fetchApiBaseline, parseApiRetryAfter, type ApiFetchTiming } from "../src/api-session.js";
 import type { LaunchHint, LaunchSnapshot } from "../src/launch-feed.js";
 
 const token = `0x${"a".repeat(40)}` as const;
@@ -355,4 +355,92 @@ test("caller cancellation reaches the baseline fetch signal", async () => {
     }),
     /fixture cancelled/,
   );
+});
+
+test("Retry-After parsing preserves seconds and HTTP dates without shortening long server cooldowns", () => {
+  const now = Date.parse("2026-10-01T12:00:00.000Z");
+  assert.equal(parseApiRetryAfter("120", now), 120000);
+  assert.equal(parseApiRetryAfter("1.25", now), 1250);
+  assert.equal(parseApiRetryAfter("Thu, 01 Oct 2026 12:02:00 GMT", now), 120000);
+  assert.equal(parseApiRetryAfter("Thu, 01 Oct 2026 11:59:00 GMT", now), 0);
+  assert.equal(parseApiRetryAfter("2147484", now), 2147484000);
+  for (const invalid of [null, "", "-1", "nonsense", "1e3", "999999999999999999999", "1\n", "x".repeat(129)])
+    assert.equal(parseApiRetryAfter(invalid, now), null);
+});
+
+test("HTTP 429/503 errors carry typed cooldowns without exposing or downloading error payloads", async () => {
+  for (const status of [429, 503, 403]) {
+    let cancelled = false;
+    const timings: ApiFetchTiming[] = [];
+    await assert.rejects(fetchApiBaseline(undefined, async () => new Response(new ReadableStream({
+      start(controller) { controller.enqueue(new TextEncoder().encode("SECRET_BODY")); },
+      cancel() { cancelled = true; },
+    }), { status, statusText: "SECRET_STATUS", headers: { "retry-after": "120", "set-cookie": "SECRET_COOKIE" } }),
+    { onTiming: (timing) => { timings.push(timing); } }), (error: unknown) => {
+      assert.ok(error instanceof ApiHttpError);
+      assert.equal(error.status, status);
+      assert.equal(error.retryAfterMs, 120000);
+      assert.equal(error.retryable, status === 429 || status === 503);
+      assert.doesNotMatch(String(error), /SECRET/);
+      return true;
+    });
+    assert.equal(cancelled, true);
+    assert.equal(timings.length, 1);
+    assert.equal(timings[0]!.outcome, "http_error");
+    assert.equal(timings[0]!.bodyAndParseMs, null);
+    assert.equal(timings[0]!.retryAfterMs, 120000);
+    assert.doesNotMatch(JSON.stringify(timings), /SECRET/);
+  }
+});
+
+test("baseline timing preserves full pagination and records only bounded header metadata", async () => {
+  const timings: ApiFetchTiming[] = [];
+  let calls = 0;
+  const result = await fetchApiBaseline(undefined, async () => {
+    calls++;
+    return Response.json(body(calls === 1 ? page(501) : [hint(1)]), { headers: {
+      "cache-control": "public, max-age=10", age: "8", etag: 'W/"snapshot-v1"',
+      date: "Thu, 01 Oct 2026 12:00:00 GMT", "set-cookie": "SECRET_COOKIE", authorization: "SECRET_AUTH",
+    } });
+  }, { onTiming: (timing) => { timings.push(timing); } });
+  assert.equal(result.launches.length, 501);
+  assert.equal(result.launches.at(-1)?.launchNumber, 1);
+  assert.equal(result.cacheMaxAgeSeconds, 10);
+  assert.deepEqual(timings.map((timing) => [timing.page, timing.rowCount, timing.status, timing.outcome]),
+    [[1, 500, 200, "success"], [2, 1, 200, "success"]]);
+  for (const timing of timings) {
+    assert.ok(timing.finishedMonotonicMs >= timing.startedMonotonicMs);
+    assert.equal(timing.durationMs, timing.finishedMonotonicMs - timing.startedMonotonicMs);
+    assert.ok(timing.headersMs! >= 0 && timing.bodyAndParseMs! >= 0 && timing.validationMs! >= 0);
+    assert.equal(timing.headers.ageSeconds, 8);
+    assert.equal(timing.headers.etag, 'W/"snapshot-v1"');
+    assert.equal(Object.isFrozen(timing), true);
+    assert.equal(Object.isFrozen(timing.headers), true);
+  }
+  assert.doesNotMatch(JSON.stringify(timings), /SECRET|artifacts/);
+});
+
+test("timing observers cannot change success or error semantics even when they throw asynchronously", async () => {
+  const result = await fetchApiBaseline(undefined, async () => response([hint(1)]), {
+    onTiming: () => { throw Error("observer failed"); },
+  });
+  assert.equal(result.launches.length, 1);
+  await assert.rejects(fetchApiBaseline(undefined, async () => new Response(null, { status: 503 }), {
+    onTiming: async () => { throw Error("observer failed asynchronously"); },
+  }), ApiHttpError);
+  await new Promise((resolve) => setImmediate(resolve));
+});
+
+test("timing records malformed responses and cancellation without exposing transport errors", async () => {
+  const timings: ApiFetchTiming[] = [];
+  await assert.rejects(fetchApiBaseline(undefined, async () => new Response("SECRET_INVALID_JSON"), {
+    onTiming: (timing) => { timings.push(timing); },
+  }), /invalid_json/);
+  const controller = new AbortController(); controller.abort();
+  await assert.rejects(fetchApiBaseline(controller.signal, async () => { throw Error("SECRET_TRANSPORT"); }, {
+    onTiming: (timing) => { timings.push(timing); },
+  }));
+  assert.deepEqual(timings.map((timing) => timing.outcome), ["invalid_response", "aborted"]);
+  assert.equal(timings[1]!.status, null);
+  assert.doesNotMatch(JSON.stringify(timings), /SECRET/);
 });

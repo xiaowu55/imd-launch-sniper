@@ -3,16 +3,16 @@ import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdi
 import { randomUUID } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawn, type ChildProcess } from "node:child_process";
-import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import { ApiLaunchError, resolveApiLaunch, type ResolvedApiLaunch } from "../src/api-launch.js";
-import { fetchApiBaseline } from "../src/api-session.js";
+import { ApiHttpError, fetchApiBaseline } from "../src/api-session.js";
 import { eligibleHints, orderFreshCandidates } from "./testnet-watch-policy.js";
 import { attemptConsumed, CONTINUOUS_FRESH_MS, journalConsumesAttempt, recentLaunch, retryDelay } from "./testnet-continuous-policy.js";
 import { ContinuousHistory } from "./testnet-continuous-history.js";
+import { runTestnetBuy } from "./testnet-buy.js";
+import { actionableHints, nextPollDelay, settleRequired, TESTNET_POLL_INTERVAL_MS, waitForNextPoll } from "./testnet-poll.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DIRECTORY = resolve(ROOT, "runtime/testnet/continuous");
@@ -37,13 +37,16 @@ const stateSchema = z.object({
   discoveries: z.record(z.string(), discoverySchema), skipped: z.record(z.string(), z.string()),
   attempted: z.boolean(), selectedLaunchId: z.uuid().optional(), purchasePhase: z.string().optional(),
   outcome: z.unknown().optional(), reason: z.string().optional(),
+  pollIntervalMs: z.number().int().positive().optional(),
+  lastPollTiming: z.object({ startedAt: z.iso.datetime(), cycleMs: z.number().nonnegative(),
+    networkMs: z.number().nonnegative().optional(), apiMs: z.number().nonnegative().optional(),
+    discoveryHeadMs: z.number().nonnegative().optional(), selectionMs: z.number().nonnegative().optional() }).optional(),
 });
 type State = z.infer<typeof stateSchema>;
 const controller = new AbortController();
-let child: ChildProcess | undefined;
 let stopped = false;
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => {
-  stopped = true; controller.abort(); child?.kill("SIGTERM");
+  stopped = true; controller.abort();
 });
 const stopping = () => stopped || existsSync(STOP);
 function privateDirectory(path: string) {
@@ -116,22 +119,29 @@ function hasExecutionEvidence(directory: string) {
   return entryExists(journal) && journalConsumesAttempt(safeRead(journal));
 }
 async function checkNetwork(anchor?: State["anchor"]) {
-  if ((await Promise.all([client.getChainId(), peer.getChainId()])).some((id) => id !== 11155111)) throw Error("fatal_wrong_chain");
-  const head = await client.getBlock();
+  const checkChain = async (endpoint: typeof client) => {
+    if (await endpoint.getChainId() !== 11155111) throw Error("fatal_wrong_chain");
+  };
+  const checkAnchor = async () => {
+    if (anchor && (await client.getBlock({ blockNumber: BigInt(anchor.number) })).hash !== anchor.hash)
+      throw Error("fatal_anchor_reorg");
+  };
+  const [head] = await settleRequired([client.getBlock(), checkChain(client), checkChain(peer), checkAnchor()] as const);
   if ((await peer.getBlock({ blockNumber: head.number })).hash !== head.hash) throw Error("head_mismatch");
   if (!recentLaunch(head.timestamp, head.timestamp, Date.now())) throw Error("stale_rpc_head");
-  if (anchor && (await client.getBlock({ blockNumber: BigInt(anchor.number) })).hash !== anchor.hash) throw Error("fatal_anchor_reorg");
   return head;
 }
-async function runBuy(id: string) {
+async function runBuy(id: string, resolvedLaunch: ResolvedApiLaunch<11155111>) {
   const fd = openSync(resolve(DIRECTORY, "execution.log"), "ax", 0o600);
   try {
-    child = spawn(process.execPath, ["--import", "tsx", resolve(ROOT, "scripts/testnet-buy.ts"), "buy-continuous", id],
-      { cwd: ROOT, stdio: ["ignore", fd, fd], env: { ...process.env, TRADING_PRIVATE_KEY: "" } });
-    return await new Promise<number | null>((resolveExit, reject) => {
-      child!.once("error", reject); child!.once("exit", resolveExit);
+    const result = await runTestnetBuy(["buy-continuous", id], {
+      resolvedLaunch, signal: controller.signal,
+      output: (value: unknown) => {
+        writeFileSync(fd, JSON.stringify(value, (_, item) => typeof item === "bigint" ? String(item) : item) + "\n");
+      },
     });
-  } finally { closeSync(fd); child = undefined; }
+    return result.exitCode;
+  } finally { fsyncSync(fd); closeSync(fd); }
 }
 async function main() {
   const [command = "start", ...rest] = process.argv.slice(2);
@@ -165,8 +175,7 @@ async function main() {
       let failures = 0;
       while (!stopping() && !state) {
         try {
-          await checkNetwork();
-          const baseline = await fetchApiBaseline(controller.signal);
+          const [baseline] = await settleRequired([fetchApiBaseline(controller.signal), checkNetwork()] as const);
           const head = await checkNetwork();
           const at = new Date().toISOString();
           const attempted = hasExecutionEvidence(DIRECTORY) || hasExecutionEvidence(resolve(ROOT, "runtime/testnet/fresh"));
@@ -182,34 +191,53 @@ async function main() {
         } catch (error) {
           if (stopping()) break;
           if (error instanceof Error && error.message.startsWith("fatal_")) throw error;
-          failures++; log("connection_retry", { failures, retryInMs: retryDelay(failures) });
-          await delay(retryDelay(failures), undefined, { signal: controller.signal }).catch(() => {});
+          failures++;
+          const pause = error instanceof ApiHttpError && error.retryAfterMs !== null
+            ? Math.max(retryDelay(failures), error.retryAfterMs) : retryDelay(failures);
+          log("connection_retry", { failures, retryInMs: pause });
+          await waitForNextPoll(pause, controller.signal).catch(() => {});
         }
       }
     }
     if (!state) return;
+    state.pollIntervalMs = TESTNET_POLL_INTERVAL_MS;
+    save("monitor.json", state);
+    if (state.nextRetryAt && Date.parse(state.nextRetryAt) > Date.now())
+      await waitForNextPoll(Date.parse(state.nextRetryAt) - Date.now(), controller.signal).catch(() => {});
     const excluded = new Set(state.baselineLiveIds);
     const currentCandidates = (rows: Parameters<typeof eligibleHints>[0]) =>
       eligibleHints(rows, excluded, new Set(Object.keys(state!.skipped)))
         .filter((hint) => !history.historyExists(hint.id));
     while (!stopping()) {
-      let pause = Math.max(1000, (state.cacheMaxAgeSeconds ?? 5) * 1000);
+      const cycleStart = performance.now();
+      const timings: NonNullable<State["lastPollTiming"]> = { startedAt: new Date().toISOString(), cycleMs: 0 };
+      const apiRequests: unknown[] = [];
+      const measure = async <T>(key: "networkMs" | "apiMs" | "discoveryHeadMs" | "selectionMs", work: () => Promise<T>) => {
+        const started = performance.now();
+        try { return await work(); }
+        finally { timings[key] = Math.round((performance.now() - started) * 100) / 100; }
+      };
+      const readSnapshot = () => fetchApiBaseline(controller.signal, fetch, {
+        onTiming: (timing) => { apiRequests.push(timing); },
+      });
+      let pause: number | undefined;
       try {
         state = history.compact(state, Date.now());
-        const head = await checkNetwork(state.anchor);
-        const snapshot = await fetchApiBaseline(controller.signal);
+        const [snapshot, head] = await settleRequired([
+          measure("apiMs", readSnapshot), measure("networkMs", () => checkNetwork(state!.anchor)),
+        ] as const);
         state.polls++; state.lastCheckedAt = snapshot.checkedAt; state.lastSuccessfulPollAt = snapshot.checkedAt;
         state.cacheMaxAgeSeconds = snapshot.cacheMaxAgeSeconds;
-        pause = Math.max(1000, (snapshot.cacheMaxAgeSeconds ?? 5) * 1000);
-        const candidates = currentCandidates(snapshot.launches);
+        const candidates = actionableHints(currentCandidates(snapshot.launches), state);
         if (candidates.length) {
-          const seenHead = await checkNetwork(state.anchor);
+          const seenHead = await measure("discoveryHeadMs", () => checkNetwork(state!.anchor));
           for (const hint of candidates) if (!state.discoveries[hint.id]) {
             state.discoveries[hint.id] = { launchId: hint.id, firstSeenAt: snapshot.checkedAt,
               firstSeenHead: { number: String(seenHead.number), hash: seenHead.hash }, listCacheMaxAgeSeconds: snapshot.cacheMaxAgeSeconds };
             log("new_api_live", state.discoveries[hint.id]);
           }
           save("monitor.json", state);
+          const selectionStart = performance.now();
           const resolved: Array<{ id: string; launch: ResolvedApiLaunch<11155111> }> = [];
           let unresolved = false;
           if (!state.attempted) for (const hint of candidates) {
@@ -223,12 +251,13 @@ async function main() {
               else if (!recentLaunch(launchBlock.timestamp, seenHead.timestamp, Date.now())) state.skipped[hint.id] = "launch_older_than_120_seconds";
               else resolved.push({ id: hint.id, launch });
             } catch (error) {
+              if (error instanceof ApiLaunchError && error.retryAfterMs !== undefined && error.retryAfterMs !== null) throw error;
               if (error instanceof ApiLaunchError && !error.retryable) state.skipped[hint.id] = error.code;
               else unresolved = true;
             }
           }
           if (!state.attempted && !unresolved && resolved.length && !stopping()) {
-            const refreshed = await fetchApiBaseline(controller.signal);
+            const refreshed = await readSnapshot();
             const fingerprint = (rows: typeof snapshot.launches) => JSON.stringify(currentCandidates(rows).map((row) => JSON.stringify(row)).sort());
             if (fingerprint(refreshed.launches) === fingerprint(snapshot.launches)) {
               const first = orderFreshCandidates(resolved.map((row) => row.launch.candidate), BigInt(state.anchor.number))[0]!;
@@ -242,9 +271,11 @@ async function main() {
                 save("observation.json", { version: 2, mode: "continuous", chainId: 11155111,
                   startedAt: state.startedAt, deadlineAt, anchor: state.anchor, baselineLiveIds: state.baselineLiveIds,
                   selectionLiveIds: refreshed.launches.filter((row) => row.chainId === 11155111 && row.status === "live").map((row) => row.id), discovery });
-                log("purchase_selected", { id: selected.id, launchBlock: String(first.blockNumber), deadlineAt });
+                timings.selectionMs = Math.round((performance.now() - selectionStart) * 100) / 100;
+                log("purchase_selected", { id: selected.id, launchBlock: String(first.blockNumber), deadlineAt,
+                  timing: { ...timings }, execution: "in_process_verified_launch" });
                 let exitCode: number | null = null;
-                try { exitCode = await runBuy(selected.id); } catch { state.reason = "execution_process_failed"; }
+                try { exitCode = await runBuy(selected.id, selected.launch); } catch { state.reason = "execution_process_failed"; }
                 const journalPath = resolve(DIRECTORY, "live/state.json");
                 const journal = existsSync(journalPath) ? safeRead(journalPath) as { phase: string; txHash?: string } : null;
                 state.purchasePhase = journal?.phase ?? "failed_before_journal";
@@ -256,18 +287,32 @@ async function main() {
           }
         }
         state.consecutiveErrors = 0; state.nextRetryAt = null;
+        timings.cycleMs = Math.round((performance.now() - cycleStart) * 100) / 100;
+        state.lastPollTiming = timings;
         log("poll", { polls: state.polls, head: String(head.number), apiRows: snapshot.launches.length,
-          newLiveCandidates: candidates.length, purchaseAttempted: state.attempted });
+          newLiveCandidates: candidates.length, purchaseAttempted: state.attempted,
+          pollIntervalMs: TESTNET_POLL_INTERVAL_MS, timing: timings, apiRequests });
       } catch (error) {
         if (state.phase === "buying") { state.attempted = true; state.phase = "observing"; state.purchasePhase = "uncertain"; state.reason = "execution_outcome_requires_review"; }
         if (stopping()) break;
         state.errors++; state.consecutiveErrors++; state.lastCheckedAt = new Date().toISOString();
         if (error instanceof Error && error.message.startsWith("fatal_")) { state.phase = "blocked"; state.reason = error.message; save("monitor.json", state); log("blocked", { reason: state.reason }); return; }
-        pause = retryDelay(state.consecutiveErrors); state.nextRetryAt = new Date(Date.now() + pause).toISOString();
-        log("retry", { consecutiveErrors: state.consecutiveErrors, nextRetryAt: state.nextRetryAt });
+        pause = retryDelay(state.consecutiveErrors);
+        if ((error instanceof ApiHttpError || error instanceof ApiLaunchError) && error.retryAfterMs != null)
+          pause = Math.max(pause, error.retryAfterMs);
+        state.nextRetryAt = new Date(Date.now() + pause).toISOString();
+        timings.cycleMs = Math.round((performance.now() - cycleStart) * 100) / 100;
+        state.lastPollTiming = timings;
+        log("retry", { consecutiveErrors: state.consecutiveErrors, nextRetryAt: state.nextRetryAt,
+          ...(error instanceof ApiHttpError ? { httpStatus: error.status, retryAfterMs: error.retryAfterMs } : {}),
+          ...(error instanceof ApiLaunchError ? { code: error.code, retryAfterMs: error.retryAfterMs } : {}),
+          timing: timings, apiRequests });
       }
       save("monitor.json", state);
-      if (!stopping()) await delay(pause, undefined, { signal: controller.signal }).catch(() => {});
+      // Cache freshness is metadata, not a mandatory extra sleep. Never overlap
+      // cycles; slow responses extend this cadence and 429/503 backoff wins.
+      if (!stopping()) await waitForNextPoll(pause ?? nextPollDelay(performance.now() - cycleStart),
+        controller.signal).catch(() => {});
     }
     state.phase = "stopped"; state.lastCheckedAt = new Date().toISOString(); save("monitor.json", state); log("stopped", { attempted: state.attempted });
   } finally { closeLock(); }

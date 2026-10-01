@@ -8,6 +8,7 @@ import { projectAbi, registryAbi } from "./discovery.js";
 import { poolAbi, poolId } from "./v4.js";
 import type { Candidate, PoolKey } from "./types.js";
 import { readBoundedJson } from "./bounded-json.js";
+import { parseApiRetryAfter } from "./api-session.js";
 
 type SupportedChain = 1 | 11155111;
 type Contract = { address: Address; codeHash: Hex };
@@ -39,13 +40,14 @@ export function trustedUniswap(chainId: SupportedChain = 1): Protocol {
 }
 
 export class ApiLaunchError extends Error {
-  constructor(readonly code: string, message: string, readonly retryable: boolean) {
+  constructor(readonly code: string, message: string, readonly retryable: boolean,
+    readonly retryAfterMs: number | null = null) {
     super(message);
     this.name = "ApiLaunchError";
   }
 }
-function fail(code: string, message: string, retryable = false): never {
-  throw new ApiLaunchError(code, message, retryable);
+function fail(code: string, message: string, retryable = false, retryAfterMs: number | null = null): never {
+  throw new ApiLaunchError(code, message, retryable, retryAfterMs);
 }
 const addr = z.string().regex(/^0x[\da-fA-F]{40}$/);
 const hash = z.string().regex(/^0x[\da-fA-F]{64}$/);
@@ -73,6 +75,33 @@ export type ResolvedApiLaunch<C extends SupportedChain = 1> = {
   deployment: Omit<Deployment, "chainId"> & { chainId: C };
   detail: ApiLaunchDetail;
 };
+const verifiedLaunches = new WeakMap<object, { id: string; chainId: SupportedChain }>();
+
+/** Identity-only reuse inside this module instance; this is not a freshness or canonicality proof. */
+export function isVerifiedApiLaunch<C extends SupportedChain>(
+  value: unknown, id: string, chainId: C,
+): value is ResolvedApiLaunch<C> {
+  if (!value || typeof value !== "object" || typeof id !== "string") return false;
+  const verified = verifiedLaunches.get(value);
+  return verified !== undefined && verified.chainId === chainId && verified.id === id.toLowerCase();
+}
+
+function verifiedResult<C extends SupportedChain>(result: ResolvedApiLaunch<C>): ResolvedApiLaunch<C> {
+  // Freeze iteratively: passthrough API metadata can be deeply nested. No caller
+  // can change pool/calldata identities or a nested deployment after verification.
+  const pending: object[] = [result];
+  const seen = new WeakSet<object>();
+  while (pending.length) {
+    const value = pending.pop()!;
+    if (seen.has(value)) continue;
+    seen.add(value);
+    for (const child of Object.values(value))
+      if (child !== null && typeof child === "object") pending.push(child);
+    Object.freeze(value);
+  }
+  verifiedLaunches.set(result, { id: result.detail.id.toLowerCase(), chainId: result.deployment.chainId });
+  return result;
+}
 const readsSchema = z.object({
   files: z.array(z.object({ path: z.string(), content: z.string() })).max(100),
 });
@@ -103,6 +132,7 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
   const protocol = trustedUniswap(chainId);
   const fetchImpl = options.fetchImpl ?? fetch;
   const source = `https://api.imd.fun/launches/${encodeURIComponent(id)}`;
+  let observedRetryAfterMs: number | null = null;
   const readJson = async (url: string): Promise<unknown> => {
     let response: Response;
     const signal = options.signal
@@ -114,8 +144,13 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
         redirect: "error",
       });
     } catch { return fail("api_unavailable", "官方 API 暂时不可用，等待重试", true); }
-    if (!response.ok)
-      return fail("api_unavailable", "官方部署资料尚未就绪或 API 暂时不可用", response.status === 404 || response.status === 429 || response.status >= 500);
+    if (!response.ok) {
+      void response.body?.cancel().catch(() => {});
+      const retryAfterMs = response.status === 429 || response.status === 503
+        ? Math.max(5000, parseApiRetryAfter(response.headers.get("retry-after")) ?? 5000) : null;
+      return fail("api_unavailable", "官方部署资料尚未就绪或 API 暂时不可用",
+        response.status === 404 || response.status === 429 || response.status >= 500, retryAfterMs);
+    }
     try { return await readBoundedJson(response, 2_000_000, signal); }
     catch { return fail("api_invalid", "官方 API 返回无效 JSON", true); }
   };
@@ -130,6 +165,11 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
       readJson(source),
       readJson(`https://api.imd.fun/reads/launch/${encodeURIComponent(id)}`),
     ]);
+    // Both fixed routes were already contacted: honor the longer cooldown even
+    // if their parallel responses contain different Retry-After headers.
+    const cooldowns = [detailRead, filesRead].flatMap((read) => read.status === "rejected" &&
+      read.reason instanceof ApiLaunchError && read.reason.retryAfterMs !== null ? [read.reason.retryAfterMs] : []);
+    observedRetryAfterMs = cooldowns.length ? Math.max(...cooldowns) : null;
     if (detailRead.status === "rejected") throw detailRead.reason;
     const raw = detailRead.value;
     if (typeof raw !== "object" || raw === null) fail("invalid_detail", "官方发射详情格式尚不完整，等待重新读取", true);
@@ -257,7 +297,7 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     if ((await client.getBlock({ blockNumber: receipt.blockNumber })).hash !== receipt.blockHash)
       fail("reorg", "核验时发射区块发生重组，请重试", true);
     if (options.signal?.aborted) fail("cancelled", "发射核验已停止", true);
-    return {
+    return verifiedResult({
       detail,
       candidate: {
         id: `${chainId}:${detail.launchNumber}:${token.address.toLowerCase()}`,
@@ -271,9 +311,13 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
         factories: [{ ...factory, autoStartSafe: false }], registries: [registry],
         deployers: [tx.from], taxPolicies: [], relayUrl: "https://relay.flashbots.net",
       },
-    };
+    });
   } catch (error) {
-    if (error instanceof ApiLaunchError) throw error;
+    if (error instanceof ApiLaunchError) {
+      if (observedRetryAfterMs !== null)
+        throw new ApiLaunchError(error.code, error.message, error.retryable, observedRetryAfterMs);
+      throw error;
+    }
     return fail("rpc_unavailable", "链上核验暂时不可用，等待重试", true);
   }
 }

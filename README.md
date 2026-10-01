@@ -108,6 +108,8 @@ npm run testnet -- status-fresh
 
 持续模式没有 30 分钟截止，独立保存在 `runtime/testnet/continuous/`，保留前一轮记录。仍只对首个通过核验的新币尝试买入一次；随后继续记录发行，但不会自动买第二个。临时网络故障持续退避重试，重启保留起点、首次发现时间和已使用预算。发行时间超过 120 秒的候选会跳过，避免恢复连接后追买旧币。
 
+持续模式按每 2 秒启动一轮的目标调度，API 与节点检查并行；请求较慢时等待本轮全部结束，不叠加请求，也不再额外等待缓存声明的 10 秒。HTTP 限流按 `Retry-After` 退避。选中后在同一进程复用刚核验过的发行结果，执行前仍检查官方 LIVE 状态、规范区块、余额、nonce、滑点与预算；已成交的候选不会每轮重复检查。
+
 ```sh
 # 启动独立后台进程，关闭对话后仍运行
 npm run testnet:supervisor -- start
@@ -124,6 +126,8 @@ npm run testnet:supervisor -- stop
 macOS 另提供 `testnet:service -- install|start|status|stop`，用于具备目录访问权限的 LaunchAgent 环境。实际在 Documents 目录部署时，macOS 可能阻止它访问工作目录和日志；服务被加载不等于监听已启动，必须核对 `monitor.json` 的成功查询时间。遇到这类限制使用上述后台监督进程，无须修改系统隐私权限。
 
 `monitor.json` 保存当前状态，`logs/YYYY-MM-DD.jsonl` 保存每次轮询、发现、错误及结果，`result.json` 保存实际交易回执与发行到成交的区块差。不需要 Codex 定时唤醒；用户询问时读取这些记录即可。
+
+轮询日志包含 API 下载、节点检查和整轮耗时；执行器的 `stage-timing.json` 使用单调时钟记录各阶段耗时。2 秒是本地调度目标，不代表官方数据每 2 秒更新，也不代表 2 秒内成交。
 
 ## 代码验证与审计
 

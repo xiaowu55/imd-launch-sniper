@@ -5,7 +5,7 @@ import {
   encodeAbiParameters, encodeEventTopics, parseAbi, parseAbiParameters,
   stringToHex, zeroAddress, type Address, type Hex, type PublicClient,
 } from "viem";
-import { ApiLaunchError, resolveApiLaunch, trustedUniswap } from "../src/api-launch.js";
+import { ApiLaunchError, isVerifiedApiLaunch, resolveApiLaunch, trustedUniswap } from "../src/api-launch.js";
 import { projectAbi, registryAbi } from "../src/discovery.js";
 import { poolAbi, poolId } from "../src/v4.js";
 
@@ -92,6 +92,56 @@ test("official API project yields exact chain-backed candidate without an IMD ma
   assert.deepEqual(f.urls, [`https://api.imd.fun/launches/${id}`, `https://api.imd.fun/reads/launch/${id}`]);
 });
 
+test("verified launch reuse accepts only the original object and its exact launch and chain", async () => {
+  const f = fixture();
+  const result = await resolveApiLaunch(id, f.client, { fetchImpl: f.fetchImpl });
+  assert.equal(isVerifiedApiLaunch(result, id, 1), true);
+  assert.equal(isVerifiedApiLaunch(result, id, 11155111), false);
+  assert.equal(isVerifiedApiLaunch(result, "00000000-0000-4000-8000-000000000002", 1), false);
+  const jsonClone = JSON.parse(JSON.stringify(result, (_, value) => typeof value === "bigint" ? String(value) : value));
+  for (const value of [null, {}, { ...result }, structuredClone(result), jsonClone, Object.create(result),
+    new Proxy(result, { get() { throw Error("untrusted getter must not be consulted"); } })])
+    assert.equal(isVerifiedApiLaunch(value, id, 1), false);
+});
+
+test("verified launch data cannot be mutated after verification, including nested financial identities", async () => {
+  const f = fixture(true);
+  const result = await resolveApiLaunch(id, f.client, { fetchImpl: f.fetchImpl });
+  for (const mutate of [
+    () => { result.candidate.token = address("9"); },
+    () => { result.candidate.pool.fee = 0; },
+    () => { result.candidate.blockHash = `0x${"0".repeat(64)}`; },
+    () => { result.deployment.router.address = address("9"); },
+    () => { result.deployment.factories[0]!.address = address("9"); },
+    () => { result.deployment.deployers.push(address("9")); },
+    () => { result.detail.artifacts[0]!.address = address("9"); },
+    () => { result.detail.attestation.manifest.pool.fee = 0; },
+    () => { Object.setPrototypeOf(result.candidate, {}); },
+  ]) assert.throws(mutate, TypeError);
+  assert.equal(isVerifiedApiLaunch(result, id, 1), true);
+  assert.equal(result.candidate.token, token);
+  assert.equal(result.candidate.pool.fee, 3000);
+});
+
+test("deep passthrough API metadata is frozen without recursive stack overflow", async () => {
+  const f = fixture();
+  const depth = 10000;
+  const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+    const response = await f.fetchImpl(url, init);
+    if (String(url).includes("/reads/")) return response;
+    const raw = await response.text();
+    return new Response(`${raw.slice(0, -1)},"metadata":${'{"child":'.repeat(depth)}{}${'}'.repeat(depth)}}`);
+  }) as typeof fetch;
+  const result = await resolveApiLaunch(id, f.client, { fetchImpl });
+  let metadata = result.detail.metadata as { child?: unknown };
+  for (let index = 0; index < depth; index++) {
+    assert.equal(Object.isFrozen(metadata), true);
+    metadata = metadata.child as typeof metadata;
+  }
+  assert.equal(Object.isFrozen(metadata), true);
+  assert.equal(isVerifiedApiLaunch(result, id, 1), true);
+});
+
 test("independent official documents load concurrently without bypassing cross-document identity checks", { timeout: 2000 }, async () => {
   const f = fixture();
   let releaseDetail!: () => void;
@@ -139,6 +189,39 @@ test("not-yet-live or missing deployment API response is retryable", async () =>
   f.detail.status = "admitted";
   await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl: f.fetchImpl }), errorCode("not_ready", true));
   await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl: (async () => new Response(null, { status: 404 })) as typeof fetch }), errorCode("api_unavailable", true));
+});
+
+test("detail and read-file rate limits preserve the longest server cooldown without exposing bodies", async () => {
+  const f = fixture();
+  const fetchImpl = (async (url: string | URL | Request) => new Response("secret remote diagnostics", {
+    status: String(url).includes("/reads/") ? 503 : 429,
+    headers: { "retry-after": String(url).includes("/reads/") ? "3000000" : "7" },
+  })) as typeof fetch;
+  await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl }), (error: unknown) => {
+    assert.ok(error instanceof ApiLaunchError);
+    assert.equal(error.code, "api_unavailable"); assert.equal(error.retryable, true);
+    assert.equal(error.retryAfterMs, 3_000_000_000);
+    assert.equal(error.message.includes("secret"), false);
+    return true;
+  });
+  for (const status of [429, 503]) {
+    const limited = (async (url: string | URL | Request, init?: RequestInit) =>
+      String(url).includes("/reads/") ? new Response(null, { status }) : f.fetchImpl(url, init)) as typeof fetch;
+    await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl: limited }), (error: unknown) =>
+      error instanceof ApiLaunchError && error.retryAfterMs === 5000 && error.retryable);
+  }
+  f.detail.id = "00000000-0000-4000-8000-000000000002";
+  await assert.rejects(resolveApiLaunch(id, f.client, { fetchImpl: (async (url: string | URL | Request, init?: RequestInit) =>
+    String(url).includes("/reads/") ? new Response(null, { status: 429, headers: { "retry-after": "60" } }) :
+      f.fetchImpl(url, init)) as typeof fetch }), (error: unknown) =>
+    error instanceof ApiLaunchError && error.code === "wrong_launch" && !error.retryable && error.retryAfterMs === 60000);
+  // A chain mismatch is rejected before either API request and retains precedence.
+  const wrongChain = { ...f.rpc, getChainId: async () => 11155111 } as unknown as PublicClient;
+  let called = false;
+  await assert.rejects(resolveApiLaunch(id, wrongChain, { fetchImpl: (async () => {
+    called = true; throw Error("must not fetch");
+  }) as typeof fetch }), errorCode("wrong_chain", false));
+  assert.equal(called, false);
 });
 
 test("a live record missing attestation or identity fields is retained for retry", async () => {

@@ -10,6 +10,7 @@ test("server startup never follows a dotenv symlink or reads a public wallet fil
   t.after(() => { delete process.env.IMD_ENV_AUDIT; rmSync(directory, { recursive: true, force: true }); });
   const file = join(directory, ".env");
   writeFileSync(file, "IMD_ENV_AUDIT=fixture-only\n", { mode: 0o644 });
+  chmodSync(file, 0o644); // Exercise a public file even when the caller uses a private umask.
   assert.throws(() => loadServerEnvironment(file), /仅限当前用户/);
   assert.equal(process.env.IMD_ENV_AUDIT, undefined);
   chmodSync(file, 0o600);
