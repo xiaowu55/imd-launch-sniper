@@ -1,0 +1,522 @@
+{
+  "chainId": 11155111,
+  "readOnly": true,
+  "newPurchases": 0,
+  "notes": [
+    "Historical replay is not a new-launch speed measurement.",
+    "These short sequential samples are not a randomized RPC benchmark.",
+    "No new trade inclusion-block improvement is claimed."
+  ],
+  "historyReplay": {
+    "startedAt": "2026-10-01T05:13:55.885Z",
+    "finishedAt": "2026-10-01T05:14:51.752Z",
+    "durationMs": 55866,
+    "httpProviders": [
+      "Sentio",
+      "PublicNode"
+    ],
+    "signalCount": 9,
+    "signals": [
+      {
+        "launchNumber": 544,
+        "blockNumber": "11819403",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 535,
+        "blockNumber": "11819432",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 538,
+        "blockNumber": "11819440",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 539,
+        "blockNumber": "11819443",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 534,
+        "blockNumber": "11819450",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 537,
+        "blockNumber": "11819471",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 536,
+        "blockNumber": "11819542",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 533,
+        "blockNumber": "11819550",
+        "source": "http",
+        "canonical": true
+      },
+      {
+        "launchNumber": 543,
+        "blockNumber": "11819565",
+        "source": "http",
+        "canonical": true
+      }
+    ],
+    "cursors": [
+      "11819464",
+      "11819528",
+      "11819592",
+      "11819656",
+      "11819657",
+      "11819658",
+      "11819659"
+    ],
+    "events": [
+      {
+        "elapsedMs": 1596,
+        "event": "chain_signal_ready",
+        "details": {
+          "chainId": 11155111,
+          "afterBlock": "11819400",
+          "registries": 1
+        }
+      },
+      {
+        "elapsedMs": 1961,
+        "event": "chain_signal_ws_subscribed",
+        "details": {
+          "provider": 0
+        }
+      },
+      {
+        "elapsedMs": 2029,
+        "event": "chain_signal_ws_invalid",
+        "details": {
+          "provider": 1
+        }
+      },
+      {
+        "elapsedMs": 3470,
+        "event": "chain_signal_ws_invalid",
+        "details": {
+          "provider": 1
+        }
+      },
+      {
+        "elapsedMs": 5846,
+        "event": "chain_signal_ws_invalid",
+        "details": {
+          "provider": 1
+        }
+      },
+      {
+        "elapsedMs": 8152,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 1,
+          "afterBlock": "11819592"
+        }
+      },
+      {
+        "elapsedMs": 10001,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 2,
+          "afterBlock": "11819592"
+        }
+      },
+      {
+        "elapsedMs": 10217,
+        "event": "chain_signal_ws_invalid",
+        "details": {
+          "provider": 1
+        }
+      },
+      {
+        "elapsedMs": 16976,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 1,
+          "afterBlock": "11819656"
+        }
+      },
+      {
+        "elapsedMs": 18681,
+        "event": "chain_signal_ws_invalid",
+        "details": {
+          "provider": 1
+        }
+      },
+      {
+        "elapsedMs": 18866,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 2,
+          "afterBlock": "11819656"
+        }
+      },
+      {
+        "elapsedMs": 21722,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 3,
+          "afterBlock": "11819656"
+        }
+      },
+      {
+        "elapsedMs": 30916,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 1,
+          "afterBlock": "11819657"
+        }
+      },
+      {
+        "elapsedMs": 33045,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 2,
+          "afterBlock": "11819657"
+        }
+      },
+      {
+        "elapsedMs": 35140,
+        "event": "chain_signal_ws_invalid",
+        "details": {
+          "provider": 1
+        }
+      },
+      {
+        "elapsedMs": 43527,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 1,
+          "afterBlock": "11819658"
+        }
+      },
+      {
+        "elapsedMs": 45408,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 2,
+          "afterBlock": "11819658"
+        }
+      }
+    ]
+  },
+  "latestSentio": {
+    "startedAt": "2026-10-01T05:21:14.233Z",
+    "finishedAt": "2026-10-01T05:21:50.058Z",
+    "durationMs": 35822,
+    "httpProviders": [
+      "Sentio",
+      "PublicNode"
+    ],
+    "signalCount": 0,
+    "signals": [],
+    "cursors": [
+      "11819692"
+    ],
+    "events": [
+      {
+        "elapsedMs": 1900,
+        "event": "chain_signal_ready",
+        "details": {
+          "chainId": 11155111,
+          "afterBlock": "11819684",
+          "registries": 1
+        }
+      },
+      {
+        "elapsedMs": 2417,
+        "event": "chain_signal_ws_subscribed",
+        "details": {
+          "provider": 0
+        }
+      },
+      {
+        "elapsedMs": 3016,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 1
+        }
+      },
+      {
+        "elapsedMs": 3391,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 2
+        }
+      },
+      {
+        "elapsedMs": 3935,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 3
+        }
+      },
+      {
+        "elapsedMs": 4763,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 1,
+          "afterBlock": "11819684"
+        }
+      },
+      {
+        "elapsedMs": 6690,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 1
+        }
+      },
+      {
+        "elapsedMs": 7058,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 2
+        }
+      },
+      {
+        "elapsedMs": 7597,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 3
+        }
+      },
+      {
+        "elapsedMs": 8417,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 2,
+          "afterBlock": "11819684"
+        }
+      },
+      {
+        "elapsedMs": 15492,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 1
+        }
+      },
+      {
+        "elapsedMs": 15862,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 2
+        }
+      },
+      {
+        "elapsedMs": 16385,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 3
+        }
+      },
+      {
+        "elapsedMs": 17204,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 1,
+          "afterBlock": "11819692"
+        }
+      },
+      {
+        "elapsedMs": 19126,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 1
+        }
+      },
+      {
+        "elapsedMs": 19501,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 2
+        }
+      },
+      {
+        "elapsedMs": 20017,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 3
+        }
+      },
+      {
+        "elapsedMs": 20838,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 2,
+          "afterBlock": "11819692"
+        }
+      },
+      {
+        "elapsedMs": 23950,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 1
+        }
+      },
+      {
+        "elapsedMs": 24318,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 2
+        }
+      },
+      {
+        "elapsedMs": 24837,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 3
+        }
+      },
+      {
+        "elapsedMs": 25658,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 3,
+          "afterBlock": "11819692"
+        }
+      },
+      {
+        "elapsedMs": 30811,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 1
+        }
+      },
+      {
+        "elapsedMs": 31176,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 2
+        }
+      },
+      {
+        "elapsedMs": 31692,
+        "event": "chain_signal_indexing_lag",
+        "details": {
+          "provider": 0,
+          "attempt": 3
+        }
+      },
+      {
+        "elapsedMs": 32509,
+        "event": "chain_signal_logs_unavailable",
+        "details": {
+          "failures": 4,
+          "afterBlock": "11819692"
+        }
+      }
+    ]
+  },
+  "latestSelected": {
+    "startedAt": "2026-10-01T05:23:27.725Z",
+    "finishedAt": "2026-10-01T05:23:59.011Z",
+    "durationMs": 31284,
+    "httpProviders": [
+      "Tenderly",
+      "PublicNode"
+    ],
+    "signalCount": 0,
+    "signals": [],
+    "cursors": [
+      "11819703",
+      "11819704",
+      "11819705"
+    ],
+    "events": [
+      {
+        "elapsedMs": 2456,
+        "event": "chain_signal_ready",
+        "details": {
+          "chainId": 11155111,
+          "afterBlock": "11819695",
+          "registries": 1
+        }
+      },
+      {
+        "elapsedMs": 2816,
+        "event": "chain_signal_ws_subscribed",
+        "details": {
+          "provider": 0
+        }
+      }
+    ]
+  },
+  "nonemptyCrosscheck": {
+    "at": "2026-10-01T05:24:59.531Z",
+    "fromBlock": "11819401",
+    "toBlock": "11819464",
+    "records": [
+      {
+        "url": "https://sepolia.gateway.tenderly.co",
+        "count": 5,
+        "fingerprint": "0x8f377808e6955427e2163b138666926769489c2718689c3eaa1b202710242787"
+      },
+      {
+        "url": "https://ethereum-sepolia-rpc.publicnode.com",
+        "count": 5,
+        "fingerprint": "0x8f377808e6955427e2163b138666926769489c2718689c3eaa1b202710242787"
+      }
+    ]
+  },
+  "drpcWs": {
+    "endpoint": "wss://sepolia.drpc.org",
+    "method": "eth_chainId",
+    "code": 35,
+    "message": "chain is not available on free plan, please upgrade to paid plan",
+    "selected": false
+  },
+  "afterUpgradeObservation": {
+    "from": "2026-10-01T05:25:35.956Z",
+    "to": "2026-10-01T05:27:30.910Z",
+    "purchaseBudgetConsumed": true,
+    "existingPurchasePhase": "confirmed",
+    "preservedTradeEvidence": true,
+    "sample": {
+      "polls": 57,
+      "intervalP50": 2001,
+      "intervalP95": 2002,
+      "cycleP50": 363,
+      "cycleP95": 475.06,
+      "events": {
+        "resumed": 1,
+        "poll": 57,
+        "chain_signal_ready": 1,
+        "chain_signal_ws_subscribed": 1
+      }
+    },
+    "chainCursorFrom": "11819714",
+    "chainCursorTo": "11819723",
+    "tradeExecutionMeasured": false
+  }
+}

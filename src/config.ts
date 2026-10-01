@@ -53,6 +53,7 @@ export const configSchema = z
     buyAmountEth: decimal.default("0.01"),
     maxFeeGwei: gasDecimal.default("30"),
     priorityFeeGwei: gasDecimal.default("2"),
+    feeStrategy: z.enum(["fixed", "competitive"]).default("competitive"),
     maxGasEth: decimal.default("0.005"),
     slippageBps: z.number().int().min(0).max(5000).default(300),
     maxBuyTaxBps: z.number().int().min(0).max(5000).default(0),
@@ -77,7 +78,7 @@ export const configSchema = z
     startBlock: blockNumber.default("0"),
     minLiquidityEth: decimal.default("0"),
     deadlineSeconds: z.number().int().min(20).max(300).default(60),
-    pollIntervalMs: z.number().int().min(1000).max(60000).default(5000),
+    pollIntervalMs: z.number().int().min(1000).max(60000).default(2000),
   })
   .strict()
   .superRefine((v, ctx) => {

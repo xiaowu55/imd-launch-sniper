@@ -9,6 +9,8 @@ import { poolAbi, poolId } from "./v4.js";
 import type { Candidate, PoolKey } from "./types.js";
 import { readBoundedJson } from "./bounded-json.js";
 import { parseApiRetryAfter } from "./api-session.js";
+import { reviewedProjectDeployments } from "./protocol-version.js";
+export { reviewedProjectDeployments } from "./protocol-version.js";
 
 type SupportedChain = 1 | 11155111;
 type Contract = { address: Address; codeHash: Hex };
@@ -66,6 +68,8 @@ const detailSchema = z.object({
   kind: z.enum(["evm_project", "custom_token", "univ4_hook"]),
   sourceRepoUrl: z.string().url(), sourceCommit: z.string().regex(/^[\da-fA-F]{40}$/),
   attestationHash: bareHash,
+  policyVersion: z.number().int().positive().optional(),
+  poolFee: z.number().int().nonnegative().max(0xffffff).optional(),
   artifacts: z.array(artifactSchema).max(100),
   attestation: z.object({ manifest: manifestSchema }).passthrough(),
 }).passthrough();
@@ -74,6 +78,7 @@ export type ResolvedApiLaunch<C extends SupportedChain = 1> = {
   candidate: Candidate;
   deployment: Omit<Deployment, "chainId"> & { chainId: C };
   detail: ApiLaunchDetail;
+  protocolVersion?: string;
 };
 const verifiedLaunches = new WeakMap<object, { id: string; chainId: SupportedChain }>();
 
@@ -109,6 +114,8 @@ const deploymentReadSchema = z.object({
   launchId: z.string().uuid(), chainId: block, sourceCommit: z.string(), attestationHash: bareHash,
   manifest: manifestSchema,
   contracts: z.array(z.object({ name: z.string(), address: addr, txHash: hash, blockNumber: block })).max(100),
+  poolKey: z.object({ currency0: addr, currency1: addr, fee: z.number().int().nonnegative().max(0xffffff),
+    tickSpacing: z.number().int(), hooks: addr }).optional(),
 });
 const networkReadSchema = z.object({ network: z.object({
   chainId: block,
@@ -187,7 +194,13 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     if (tokens.length !== 1) fail("token_ambiguous", "官方发射必须恰好包含一个代币产物");
     const token = tokens[0]!;
     const hooks = detail.artifacts.filter((a) => a.role === "hook");
-    if ((detail.kind === "univ4_hook" && hooks.length !== 1) || (detail.kind !== "univ4_hook" && hooks.length !== 0))
+    const guardedProject = detail.kind !== "univ4_hook" && (hooks.length > 0 || (detail.policyVersion ?? 0) >= 5);
+    const projectVersion = guardedProject ? reviewedProjectDeployments(chainId).find((version) =>
+      version.policyVersions.includes(detail.policyVersion ?? 0) && hooks.length === 1 &&
+      hooks[0]!.name === "PoolInitializationGuard" && equal(hooks[0]!.address, version.guard.address)) : undefined;
+    if (guardedProject && !projectVersion)
+      fail("unsupported_project_version", "项目使用了尚未核验的网络、政策或池初始化守卫版本");
+    if ((detail.kind === "univ4_hook" && hooks.length !== 1) || (!guardedProject && detail.kind !== "univ4_hook" && hooks.length !== 0))
       fail("hook_ambiguous", "官方 Hook 产物与发射类型不一致");
     const hook = hooks[0];
     if (hook && (!equal(hook.txHash, token.txHash) || hook.blockNumber !== token.blockNumber))
@@ -218,9 +231,16 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
       if (!equal(actual, protocol[role as keyof Protocol].address))
         fail("unsupported_protocol", "官方文件使用了尚未支持的 Uniswap 合约版本，暂停该币核验");
     }
-    for (const artifact of [token, ...(hook ? [hook] : [])]) {
+    // Protocol guards are supplied by ProjectFactory, not contributor contracts.
+    // Their exact address/hash and receipt provenance are checked separately below.
+    const contributorArtifacts = [token, ...(hook && !projectVersion ? [hook] : []),
+      ...(projectVersion ? detail.artifacts.filter((artifact) => artifact.role === "other") : [])];
+    if (projectVersion && deployed.contracts.length !== contributorArtifacts.length)
+      fail("artifact_mismatch", "项目部署文件必须完整对应代币和应用合约，协议守卫须独立核验");
+    for (const artifact of contributorArtifacts) {
       const matches = deployed.contracts.filter((c) => equal(c.address, artifact.address));
-      if (matches.length !== 1 || !equal(matches[0]!.txHash, artifact.txHash) || matches[0]!.blockNumber !== artifact.blockNumber)
+      if (matches.length !== 1 || !equal(matches[0]!.txHash, artifact.txHash) || matches[0]!.blockNumber !== artifact.blockNumber ||
+          (projectVersion && matches[0]!.name !== artifact.name))
         fail("artifact_mismatch", "官方详情与部署文件的代币或 Hook 不一致");
     }
     const manifest = detail.attestation.manifest;
@@ -234,6 +254,10 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     ]);
     if (!tx.to || tx.chainId !== chainId || !equal(tx.hash, token.txHash) || !equal(receipt.transactionHash, token.txHash) || receipt.status !== "success" || receipt.blockNumber !== BigInt(token.blockNumber) || tx.blockNumber !== receipt.blockNumber || tx.blockHash !== receipt.blockHash || tx.transactionIndex !== receipt.transactionIndex || !equal(tx.from, receipt.from) || !equal(receipt.to ?? "", tx.to))
       fail("transaction_mismatch", "官方发射交易与链上成功回执不一致");
+    if (projectVersion && !equal(tx.to, projectVersion.factory.address))
+      fail("project_identity", "项目工厂地址不属于已核验版本");
+    if (!projectVersion && detail.kind !== "univ4_hook" && reviewedProjectDeployments(chainId).some((version) => equal(tx.to!, version.factory.address)))
+      fail("unsupported_project_version", "已核验的新项目工厂缺少对应政策或初始化守卫凭据");
     const launchBlock = await client.getBlock({ blockNumber: receipt.blockNumber });
     if (launchBlock.hash !== receipt.blockHash)
       fail("reorg", "发射区块已变化，等待重新核对", true);
@@ -255,25 +279,45 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     if (poolId(chosen.pool) !== chosen.id || !equal(chosen.pool.hooks, hook?.address ?? zeroAddress))
       fail("pool_mismatch", "链上 PoolKey 或 Hook 与官方代币产物不一致");
     for (const pool of [manifest.pool, deployed.manifest.pool]) {
-      if (!equal(pool.pairedCurrency, zeroAddress) || pool.fee !== chosen.pool.fee || pool.tickSpacing !== chosen.pool.tickSpacing)
+      if (!equal(pool.pairedCurrency, zeroAddress) || pool.fee !== (projectVersion?.admissionFee ?? chosen.pool.fee) || pool.tickSpacing !== chosen.pool.tickSpacing)
         fail("pool_mismatch", "官方池参数与链上初始化事件不一致");
     }
+    if (projectVersion) {
+      const handoff = deployed.poolKey;
+      if (!handoff || detail.poolFee !== projectVersion.tradingFee || chosen.pool.fee !== projectVersion.tradingFee ||
+          chosen.pool.tickSpacing !== projectVersion.tickSpacing || poolId(handoff as PoolKey) !== chosen.id)
+        fail("pool_mismatch", "已核验版本的交易费或部署 PoolKey 与链上初始化事件不一致");
+    } else if (detail.poolFee !== undefined && detail.poolFee !== chosen.pool.fee) {
+      fail("pool_mismatch", "官方实际池费用与链上初始化事件不一致");
+    }
+    const projectArtifacts = projectVersion ? detail.artifacts.map((artifact) => artifact.address.toLowerCase()) : [];
+    const distributors = detail.artifacts.filter((artifact) => artifact.role === "distributor");
+    if (projectVersion && (new Set(projectArtifacts).size !== projectArtifacts.length || distributors.length !== 1 ||
+        distributors[0]!.name !== "MerkleDistributor" || detail.artifacts.some((artifact) =>
+          !["token", "hook", "distributor", "other"].includes(artifact.role) || !equal(artifact.txHash, token.txHash) || artifact.blockNumber !== token.blockNumber)))
+      fail("artifact_mismatch", "项目产物角色、地址或发射交易不一致");
+    const sameAddresses = (actual: readonly string[], expected: readonly string[]) =>
+      actual.length === expected.length && new Set(actual.map((address) => address.toLowerCase())).size === actual.length &&
+      actual.every((address) => expected.some((other) => equal(address, other)));
     const registries: Address[] = [];
     let factoryEvents = 0;
     for (const log of logs) {
       try {
         const decoded = decodeEventLog({ abi: registryAbi, data: log.data, topics: log.topics, strict: true });
-        if (decoded.args.launchNumber === BigInt(detail.launchNumber) && hexToString(decoded.args.kind, { size: 32 }).replace(/\0/g, "") === detail.kind && decoded.args.artifacts.some((a) => equal(a, token.address)) && (!hook || decoded.args.artifacts.some((a) => equal(a, hook.address))) && equal(decoded.args.sourceCommit, `0x${detail.sourceCommit.padEnd(64, "0")}`) && equal(decoded.args.attestationHash, `0x${detail.attestationHash}`))
+        if (decoded.args.launchNumber === BigInt(detail.launchNumber) && hexToString(decoded.args.kind, { size: 32 }).replace(/\0/g, "") === detail.kind && decoded.args.artifacts.some((a) => equal(a, token.address)) && (!hook || decoded.args.artifacts.some((a) => equal(a, hook.address))) && equal(decoded.args.sourceCommit, `0x${detail.sourceCommit.padEnd(64, "0")}`) && equal(decoded.args.attestationHash, `0x${detail.attestationHash}`) &&
+            (!projectVersion || (equal(log.address, projectVersion.registry.address) && sameAddresses(decoded.args.artifacts, projectArtifacts))))
           registries.push(log.address);
       } catch { /* Require the recognized full launch provenance event. */ }
       if (!equal(log.address, tx.to)) continue;
       try {
-        if (hook) {
+        if (detail.kind === "univ4_hook") {
           const event = decodeEventLog({ abi: hookAbi, data: log.data, topics: log.topics, strict: true });
-          if (event.args.launchNumber === BigInt(detail.launchNumber) && equal(event.args.token, token.address) && equal(event.args.hook, hook.address)) factoryEvents++;
+          if (event.args.launchNumber === BigInt(detail.launchNumber) && equal(event.args.token, token.address) && equal(event.args.hook, hook!.address)) factoryEvents++;
         } else {
           const event = decodeEventLog({ abi: projectAbi, data: log.data, topics: log.topics, strict: true });
-          if (event.args.launchNumber === BigInt(detail.launchNumber) && equal(event.args.token, token.address)) factoryEvents++;
+          if (event.args.launchNumber === BigInt(detail.launchNumber) && equal(event.args.token, token.address) &&
+              (!projectVersion || (equal(event.args.distributor, distributors[0]!.address) &&
+                sameAddresses(event.args.contracts, detail.artifacts.filter((artifact) => artifact.role === "other").map((artifact) => artifact.address))))) factoryEvents++;
         }
       } catch { /* Unrelated factory events do not attest this token. */ }
     }
@@ -282,7 +326,12 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     const atLaunch = async (address: Address): Promise<Contract> => {
       const code = await client.getCode({ address, blockNumber: receipt.blockNumber });
       if (!code || code === "0x") fail("missing_code", "发射合约或代币的链上代码不可验证");
-      return { address, codeHash: keccak256(code) };
+      const codeHash = keccak256(code);
+      const expected = projectVersion && [projectVersion.factory, projectVersion.registry, projectVersion.guard]
+        .find((contract) => equal(contract.address, address));
+      if (expected && expected.codeHash !== codeHash)
+        fail("project_code", "项目工厂、登记合约或初始化守卫代码与已核验版本不一致");
+      return { address, codeHash };
     };
     const [factory, registry] = await Promise.all([
       atLaunch(tx.to), atLaunch(registries[0]!), atLaunch(token.address as Address),
@@ -299,6 +348,7 @@ export async function resolveApiLaunch<C extends SupportedChain = 1>(
     if (options.signal?.aborted) fail("cancelled", "发射核验已停止", true);
     return verifiedResult({
       detail,
+      ...(projectVersion ? { protocolVersion: projectVersion.version } : {}),
       candidate: {
         id: `${chainId}:${detail.launchNumber}:${token.address.toLowerCase()}`,
         token: token.address as Address, poolId: chosen.id, pool: chosen.pool,

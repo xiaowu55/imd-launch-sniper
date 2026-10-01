@@ -1,18 +1,24 @@
 import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync,
   openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
-import { ApiLaunchError, resolveApiLaunch, type ResolvedApiLaunch } from "../src/api-launch.js";
+import { ApiLaunchError, type ResolvedApiLaunch } from "../src/api-launch.js";
 import { ApiHttpError, fetchApiBaseline } from "../src/api-session.js";
 import { eligibleHints, orderFreshCandidates } from "./testnet-watch-policy.js";
-import { attemptConsumed, CONTINUOUS_FRESH_MS, journalConsumesAttempt, recentLaunch, retryDelay } from "./testnet-continuous-policy.js";
+import { attemptConsumed, CONTINUOUS_FRESH_MS, journalConsumesAttempt, recentLaunch, retryDelay, safeRetryDeadline } from "./testnet-continuous-policy.js";
 import { ContinuousHistory } from "./testnet-continuous-history.js";
 import { runTestnetBuy } from "./testnet-buy.js";
 import { actionableHints, nextPollDelay, settleRequired, TESTNET_POLL_INTERVAL_MS, waitForNextPoll } from "./testnet-poll.js";
+import { reviewedProjectDeployments } from "../src/protocol-version.js";
+import { startChainSignals, type ChainLaunchSignal } from "../src/chain-signals.js";
+import { LaunchPreparation } from "../src/launch-preparation.js";
+import { mapBounded } from "../src/execution-speed.js";
+import type { LaunchHint } from "../src/launch-feed.js";
+import { NetworkReadError, readPeerHead } from "./testnet-network.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DIRECTORY = resolve(ROOT, "runtime/testnet/continuous");
@@ -23,6 +29,10 @@ const client = createPublicClient({ chain: sepolia,
   transport: http("https://sepolia.rpc.sentio.xyz", { retryCount: 0, timeout: 10000 }) });
 const peer = createPublicClient({ chain: sepolia,
   transport: http("https://ethereum-sepolia-rpc.publicnode.com", { retryCount: 0, timeout: 10000 }) });
+// Keep the archive-capable resolver above. The log observer uses the pair
+// whose current-block logs agreed in the 2026-10-01 read-only check.
+const signalClient = createPublicClient({ chain: sepolia,
+  transport: http("https://sepolia.gateway.tenderly.co", { retryCount: 0, timeout: 10000 }) });
 const blockSchema = z.object({ number: z.string().regex(/^[1-9]\d*$/), hash: z.string().regex(/^0x[\da-f]{64}$/i) });
 const discoverySchema = z.object({ launchId: z.uuid(), firstSeenAt: z.iso.datetime(),
   firstSeenHead: blockSchema, listCacheMaxAgeSeconds: z.number().nullable() });
@@ -120,14 +130,17 @@ function hasExecutionEvidence(directory: string) {
 }
 async function checkNetwork(anchor?: State["anchor"]) {
   const checkChain = async (endpoint: typeof client) => {
-    if (await endpoint.getChainId() !== 11155111) throw Error("fatal_wrong_chain");
+    const id = await endpoint.getChainId().catch(() => { throw new NetworkReadError("rpc_identity_unavailable"); });
+    if (id !== 11155111) throw Error("fatal_wrong_chain");
   };
   const checkAnchor = async () => {
-    if (anchor && (await client.getBlock({ blockNumber: BigInt(anchor.number) })).hash !== anchor.hash)
+    if (anchor && (await client.getBlock({ blockNumber: BigInt(anchor.number) })
+      .catch(() => { throw new NetworkReadError("rpc_anchor_unavailable"); })).hash !== anchor.hash)
       throw Error("fatal_anchor_reorg");
   };
-  const [head] = await settleRequired([client.getBlock(), checkChain(client), checkChain(peer), checkAnchor()] as const);
-  if ((await peer.getBlock({ blockNumber: head.number })).hash !== head.hash) throw Error("head_mismatch");
+  const [head] = await settleRequired([client.getBlock().catch(() => { throw new NetworkReadError("rpc_head_unavailable"); }),
+    checkChain(client), checkChain(peer), checkAnchor()] as const);
+  await readPeerHead(head, () => peer.getBlock({ blockNumber: head.number }), controller.signal);
   if (!recentLaunch(head.timestamp, head.timestamp, Date.now())) throw Error("stale_rpc_head");
   return head;
 }
@@ -160,6 +173,8 @@ async function main() {
   if (existsSync(STOP)) { console.log(JSON.stringify({ phase: "stopped", message: "Explicit STOP remains in place." })); return; }
   acquireLock();
   let state: State | undefined;
+  let chainSignals: ReturnType<typeof startChainSignals> | undefined;
+  let drainPreparations = async () => {};
   try {
     const history = new ContinuousHistory(resolve(DIRECTORY, "history"));
     if (existsSync(FILE)) {
@@ -208,8 +223,97 @@ async function main() {
     const currentCandidates = (rows: Parameters<typeof eligibleHints>[0]) =>
       eligibleHints(rows, excluded, new Set(Object.keys(state!.skipped)))
         .filter((hint) => !history.historyExists(hint.id));
+    const preparations = new LaunchPreparation(client, 11155111, controller.signal);
+    drainPreparations = () => preparations.settle();
+    const identities = new Map<number, LaunchHint>();
+    const recentSignals = new Map<number, ChainLaunchSignal>();
+    const primed = new Set<string>();
+    let previousLive = new Map<string, string>();
+    let wakeVersion = 0;
+    let wakeSleep: AbortController | undefined;
+    let apiCooldownUntil = 0;
+    const persistApiCooldown = (delayMs: number) => {
+      try {
+        const deadline = safeRetryDeadline(delayMs, Date.now());
+        apiCooldownUntil = Math.max(apiCooldownUntil, Date.parse(deadline));
+        preparations.defer(delayMs);
+        state!.nextRetryAt = new Date(apiCooldownUntil).toISOString();
+        save("monitor.json", state);
+      } catch {
+        // An unrepresentable server deadline must not become an immediate
+        // request after a timer overflow or a supervisor restart.
+        state!.phase = "blocked"; state!.reason = "fatal_api_cooldown_unrepresentable";
+        save("monitor.json", state); log("blocked", { reason: state!.reason });
+        stopped = true; controller.abort();
+      }
+    };
+    const prime = (event: ChainLaunchSignal) => {
+      if (stopping() || state!.attempted || apiCooldownUntil > Date.now() || event.removed || event.blockNumber <= BigInt(state!.anchor.number)) return;
+      const hint = identities.get(event.launchNumber);
+      if (!hint || hint.chainId !== 11155111 || excluded.has(hint.id) || state!.skipped[hint.id] || history.historyExists(hint.id)) return;
+      const key = `${hint.id}:${event.transactionHash}:${event.blockHash}`;
+      if (primed.has(key)) return;
+      primed.add(key); while (primed.size > 256) primed.delete(primed.values().next().value!);
+      void preparations.prepare(hint.id).then(launch => {
+        log("chain_preparation_ready", { launchId: hint.id, launchNumber: launch.candidate.launchNumber,
+          launchBlock: String(launch.candidate.blockNumber), signalMatches: launch.candidate.launchTxHash === event.transactionHash });
+      }).catch(error => {
+        if (error instanceof ApiLaunchError && error.retryAfterMs !== null)
+          persistApiCooldown(error.retryAfterMs);
+        if (!stopping()) log("chain_preparation_waiting", { launchId: hint.id,
+          code: error instanceof ApiLaunchError ? error.code : "preparation_unavailable" });
+      });
+    };
+    const updateIdentities = (rows: LaunchHint[]) => {
+      const live = new Map(currentCandidates(rows).map(h => [h.id, JSON.stringify(h)]));
+      if ([...previousLive].some(([id, value]) => live.get(id) !== value)) preparations.clear();
+      previousLive = live; identities.clear();
+      for (const row of rows) if (row.chainId === 11155111) identities.set(row.launchNumber, row);
+      for (const hint of recentSignals.values()) prime(hint);
+    };
+    const registries = reviewedProjectDeployments(11155111).map(d => d.registry);
+    if (registries.length) {
+      const fingerprint = createHash("sha256").update(JSON.stringify(registries)).digest("hex");
+      const chainFile = resolve(DIRECTORY, "chain-watch.json");
+      const schema = z.object({ version: z.literal(1), chainId: z.literal(11155111), fingerprint: z.string(),
+        startedAt: z.iso.datetime(), anchor: blockSchema, cursor: blockSchema });
+      let saved = existsSync(chainFile) ? schema.parse(safeRead(chainFile)) : undefined;
+      if (!saved || saved.fingerprint !== fingerprint) {
+        // This already-spent session starts new latency observations now; an
+        // unspent session replays its complete original observation interval.
+        const head = state.attempted ? await checkNetwork(state.anchor) : null;
+        const anchor = head ? { number: String(head.number), hash: head.hash } : state.anchor;
+        saved = { version: 1, chainId: 11155111, fingerprint, startedAt: new Date().toISOString(), anchor, cursor: anchor };
+        save("chain-watch.json", saved);
+      }
+      const chainState = saved;
+      chainSignals = startChainSignals({ chainId: 11155111, client: signalClient, peer, registries,
+        startAfter: { number: BigInt(chainState.anchor.number), hash: chainState.anchor.hash as `0x${string}` },
+        cursor: { number: BigInt(chainState.cursor.number), hash: chainState.cursor.hash as `0x${string}` },
+        // dRPC's public Sepolia WS now requires a paid plan (live check 2026-10-01).
+        // PublicNode WS is backed by the independent two-provider HTTP replay.
+        wsUrls: ["wss://ethereum-sepolia-rpc.publicnode.com"], signal: controller.signal,
+        onSignal: event => {
+          log("chain_launch_signal", { ...event, blockNumber: String(event.blockNumber), tradingAuthorization: false });
+          if (event.removed) { recentSignals.delete(event.launchNumber); preparations.clear(); }
+          else {
+            if (!recentSignals.has(event.launchNumber)) recentSignals.set(event.launchNumber, event);
+            while (recentSignals.size > 512) recentSignals.delete(recentSignals.keys().next().value!);
+            prime(event);
+          }
+          wakeVersion++; wakeSleep?.abort();
+        },
+        onCursor: cursor => { chainState.cursor = { number: String(cursor.number), hash: cursor.hash }; save("chain-watch.json", chainState); },
+        onEvent: (event, details) => {
+          if (event === "chain_signal_reorg") { preparations.clear(); recentSignals.clear(); }
+          log(event, details);
+        },
+      });
+      void chainSignals.ready.catch(() => {});
+    }
     while (!stopping()) {
       const cycleStart = performance.now();
+      const cycleWakeVersion = wakeVersion;
       const timings: NonNullable<State["lastPollTiming"]> = { startedAt: new Date().toISOString(), cycleMs: 0 };
       const apiRequests: unknown[] = [];
       const measure = async <T>(key: "networkMs" | "apiMs" | "discoveryHeadMs" | "selectionMs", work: () => Promise<T>) => {
@@ -217,9 +321,16 @@ async function main() {
         try { return await work(); }
         finally { timings[key] = Math.round((performance.now() - started) * 100) / 100; }
       };
-      const readSnapshot = () => fetchApiBaseline(controller.signal, fetch, {
-        onTiming: (timing) => { apiRequests.push(timing); },
-      });
+      const readSnapshot = () => {
+        if (apiCooldownUntil > Date.now()) throw new ApiHttpError(429, Math.ceil(apiCooldownUntil - Date.now()));
+        return fetchApiBaseline(controller.signal, fetch, { onTiming: (timing) => { apiRequests.push(timing); } })
+          .catch(error => {
+            // Record server backoff at response time, before a slow sibling
+            // RPC finishes; WS preparation shares this same cooldown.
+            if (error instanceof ApiHttpError && error.retryAfterMs !== null) persistApiCooldown(error.retryAfterMs);
+            throw error;
+          });
+      };
       let pause: number | undefined;
       try {
         state = history.compact(state, Date.now());
@@ -228,6 +339,7 @@ async function main() {
         ] as const);
         state.polls++; state.lastCheckedAt = snapshot.checkedAt; state.lastSuccessfulPollAt = snapshot.checkedAt;
         state.cacheMaxAgeSeconds = snapshot.cacheMaxAgeSeconds;
+        updateIdentities(snapshot.launches);
         const candidates = actionableHints(currentCandidates(snapshot.launches), state);
         if (candidates.length) {
           const seenHead = await measure("discoveryHeadMs", () => checkNetwork(state!.anchor));
@@ -235,26 +347,41 @@ async function main() {
             state.discoveries[hint.id] = { launchId: hint.id, firstSeenAt: snapshot.checkedAt,
               firstSeenHead: { number: String(seenHead.number), hash: seenHead.hash }, listCacheMaxAgeSeconds: snapshot.cacheMaxAgeSeconds };
             log("new_api_live", state.discoveries[hint.id]);
+            const chainSeen = recentSignals.get(hint.launchNumber);
+            if (chainSeen && !chainSeen.removed) log("chain_api_comparison", {
+              launchId: hint.id, launchNumber: hint.launchNumber, chainObservedAt: chainSeen.observedAt,
+              apiObservedAt: snapshot.checkedAt, apiMinusChainMs: Date.parse(snapshot.checkedAt) - Date.parse(chainSeen.observedAt),
+              chainSource: chainSeen.source, chainBlock: String(chainSeen.blockNumber),
+            });
           }
           save("monitor.json", state);
           const selectionStart = performance.now();
           const resolved: Array<{ id: string; launch: ResolvedApiLaunch<11155111> }> = [];
           let unresolved = false;
-          if (!state.attempted) for (const hint of candidates) {
-            if (stopping()) break;
-            const discovery = state.discoveries[hint.id]!;
-            if (Date.now() >= Date.parse(discovery.firstSeenAt) + CONTINUOUS_FRESH_MS) { state.skipped[hint.id] = "discovery_expired"; continue; }
+          const prepared = !state.attempted ? await mapBounded(candidates, 2, async hint => {
+            if (stopping()) return;
+            const discovery = state!.discoveries[hint.id]!;
+            if (Date.now() >= Date.parse(discovery.firstSeenAt) + CONTINUOUS_FRESH_MS) { state!.skipped[hint.id] = "discovery_expired"; return; }
             try {
-              const launch = await resolveApiLaunch(hint.id, client, { chainId: 11155111, signal: controller.signal });
+              const launch = await preparations.prepare(hint.id);
+              if (launch.detail.id !== hint.id || launch.candidate.launchNumber !== hint.launchNumber ||
+                  (hint.token && launch.candidate.token.toLowerCase() !== hint.token.toLowerCase()))
+                throw new ApiLaunchError("candidate_identity_changed", "Launch identity changed during preparation", false);
               const launchBlock = await client.getBlock({ blockNumber: launch.candidate.blockNumber });
-              if (launch.candidate.blockNumber <= BigInt(state.anchor.number)) state.skipped[hint.id] = "deployed_before_observation";
-              else if (!recentLaunch(launchBlock.timestamp, seenHead.timestamp, Date.now())) state.skipped[hint.id] = "launch_older_than_120_seconds";
+              if (launch.candidate.blockNumber <= BigInt(state!.anchor.number)) state!.skipped[hint.id] = "deployed_before_observation";
+              else if (!recentLaunch(launchBlock.timestamp, seenHead.timestamp, Date.now())) state!.skipped[hint.id] = "launch_older_than_120_seconds";
               else resolved.push({ id: hint.id, launch });
             } catch (error) {
               if (error instanceof ApiLaunchError && error.retryAfterMs !== undefined && error.retryAfterMs !== null) throw error;
-              if (error instanceof ApiLaunchError && !error.retryable) state.skipped[hint.id] = error.code;
+              if (error instanceof ApiLaunchError && !error.retryable) state!.skipped[hint.id] = error.code;
               else unresolved = true;
             }
+          }) : [];
+          const failures = prepared.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+          if (failures.length) {
+            const cooldown = failures.map(r => r.reason).filter((e): e is ApiLaunchError => e instanceof ApiLaunchError && e.retryAfterMs !== null)
+              .sort((a, b) => b.retryAfterMs! - a.retryAfterMs!)[0];
+            throw cooldown ?? failures[0]!.reason;
           }
           if (!state.attempted && !unresolved && resolved.length && !stopping()) {
             const refreshed = await readSnapshot();
@@ -265,7 +392,7 @@ async function main() {
               const discovery = state.discoveries[selected.id]!;
               const deadlineAt = new Date(Date.parse(discovery.firstSeenAt) + CONTINUOUS_FRESH_MS).toISOString();
               if (Date.now() < Date.parse(deadlineAt)) {
-                // Persist budget consumption BEFORE the child can start; never reopen it on restart.
+                // Persist budget consumption BEFORE execution; never reopen it on restart.
                 state.attempted = true; state.phase = "buying"; state.selectedLaunchId = selected.id;
                 state.purchasePhase = "selected"; save("monitor.json", state);
                 save("observation.json", { version: 2, mode: "continuous", chainId: 11155111,
@@ -297,24 +424,41 @@ async function main() {
         if (stopping()) break;
         state.errors++; state.consecutiveErrors++; state.lastCheckedAt = new Date().toISOString();
         if (error instanceof Error && error.message.startsWith("fatal_")) { state.phase = "blocked"; state.reason = error.message; save("monitor.json", state); log("blocked", { reason: state.reason }); return; }
-        pause = retryDelay(state.consecutiveErrors);
+        pause = error instanceof NetworkReadError && error.code === "rpc_peer_head_lag" && state.consecutiveErrors <= 2
+          ? 1000 : retryDelay(state.consecutiveErrors);
         if ((error instanceof ApiHttpError || error instanceof ApiLaunchError) && error.retryAfterMs != null)
-          pause = Math.max(pause, error.retryAfterMs);
-        state.nextRetryAt = new Date(Date.now() + pause).toISOString();
+          { pause = Math.max(pause, error.retryAfterMs); persistApiCooldown(error.retryAfterMs); }
+        if (stopping()) break;
+        state.nextRetryAt = safeRetryDeadline(pause, Date.now());
         timings.cycleMs = Math.round((performance.now() - cycleStart) * 100) / 100;
         state.lastPollTiming = timings;
         log("retry", { consecutiveErrors: state.consecutiveErrors, nextRetryAt: state.nextRetryAt,
+          reason: error instanceof NetworkReadError ? error.code : error instanceof ApiHttpError ? "api_http_error" :
+            error instanceof ApiLaunchError ? error.code : error instanceof Error && error.message === "stale_rpc_head" ? "stale_rpc_head" : "read_or_validation_error",
           ...(error instanceof ApiHttpError ? { httpStatus: error.status, retryAfterMs: error.retryAfterMs } : {}),
           ...(error instanceof ApiLaunchError ? { code: error.code, retryAfterMs: error.retryAfterMs } : {}),
           timing: timings, apiRequests });
       }
-      save("monitor.json", state);
       // Cache freshness is metadata, not a mandatory extra sleep. Never overlap
       // cycles; slow responses extend this cadence and 429/503 backoff wins.
-      if (!stopping()) await waitForNextPoll(pause ?? nextPollDelay(performance.now() - cycleStart),
-        controller.signal).catch(() => {});
+      if (apiCooldownUntil > Date.now()) {
+        pause = Math.max(pause ?? 0, apiCooldownUntil - Date.now());
+        state.nextRetryAt = new Date(Date.now() + pause).toISOString();
+      }
+      save("monitor.json", state);
+      if (!stopping()) {
+        if (pause !== undefined) await waitForNextPoll(pause, controller.signal).catch(() => {});
+        else {
+          wakeSleep = new AbortController();
+          await waitForNextPoll(wakeVersion !== cycleWakeVersion ? Math.max(100, 500 - (performance.now() - cycleStart)) :
+            nextPollDelay(performance.now() - cycleStart), AbortSignal.any([controller.signal, wakeSleep.signal])).catch(() => {});
+          wakeSleep = undefined;
+        }
+      }
     }
-    state.phase = "stopped"; state.lastCheckedAt = new Date().toISOString(); save("monitor.json", state); log("stopped", { attempted: state.attempted });
-  } finally { closeLock(); }
+    if (state.phase !== "blocked") {
+      state.phase = "stopped"; state.lastCheckedAt = new Date().toISOString(); save("monitor.json", state); log("stopped", { attempted: state.attempted });
+    }
+  } finally { stopped = true; controller.abort(); await chainSignals?.stop(); await drainPreparations(); closeLock(); }
 }
 main().catch(() => { console.error(JSON.stringify({ event: "continuous_error", at: new Date().toISOString(), message: "Inspect persisted state and private directory permissions; never reset an attempted transaction." })); process.exitCode = 1; });

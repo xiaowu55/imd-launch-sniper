@@ -23,11 +23,12 @@
     buyAmountEth: "0.01",
     maxFeeGwei: "30",
     priorityFeeGwei: "2",
+    feeStrategy: "competitive",
     maxGasEth: "0.005",
     minLiquidityEth: "0",
     minLaunchNumber: 1,
     deadlineSeconds: 60,
-    pollIntervalMs: 5000,
+    pollIntervalMs: 2000,
     slippageBps: 300,
     maxBuyTaxBps: 0,
     maxSellTaxBps: 0,
@@ -247,6 +248,7 @@
   function populate(config) {
     const merged = { ...defaults, ...config };
     $("discoverySource").value = merged.discoverySource;
+    $("feeStrategy").value = merged.feeStrategy;
     for (const field of [...decimalFields, ...integerFields])
       $(field).value = merged[field];
     for (const field of percentFields)
@@ -290,10 +292,13 @@
     const config = {
       unknownTaxPolicy: "reject",
       discoverySource: $("discoverySource").value,
+      feeStrategy: $("feeStrategy").value,
       taxCheck: "off",
     };
     if (!["api", "chain"].includes(config.discoverySource))
       throw new Error("请选择项目发现方式。");
+    if (!["fixed", "competitive"].includes(config.feeStrategy))
+      throw new Error("请选择优先费策略。");
     for (const field of decimalFields) {
       const value = $(field).value.trim();
       const gas = ["maxFeeGwei", "priorityFeeGwei"].includes(field);

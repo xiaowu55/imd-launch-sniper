@@ -27,7 +27,11 @@ import { projectAdapter } from "./discovery.js";
 import { eligibility } from "./policy.js";
 import { encodeBuy, minimumOut, quoterAbi, poolId } from "./v4.js";
 import { startLaunchFeed, type LaunchSnapshot } from "./launch-feed.js";
-import { ApiSession, fetchApiBaseline } from "./api-session.js";
+import { ApiSession, ApiHttpError, fetchApiBaseline } from "./api-session.js";
+import { mapBounded, pollDelay, scheduleAfter, settleChecks, StageBlockReads } from "./execution-speed.js";
+import { selectPriorityFee } from "./fees.js";
+import { startChainSignals } from "./chain-signals.js";
+import { LaunchPreparation } from "./launch-preparation.js";
 import {
   resolveApiLaunch,
   trustedUniswap,
@@ -77,6 +81,7 @@ export class Engine {
   };
   private stops: (() => void)[] = [];
   private timer?: NodeJS.Timeout;
+  private wakeApiPoll?: () => void;
   private journal?: Journal;
   private busy = false;
   private nextBlock = 0n;
@@ -472,9 +477,14 @@ export class Engine {
       excluded: session.state!.excluded.length,
       pending: session.pending().length,
     });
+    const preparation = this.api.resolve === resolveApiLaunch
+      ? new LaunchPreparation(client, 1, controller.signal)
+      : undefined;
     const waitingSince = new Map<string, number>();
+    let apiRevision = 0;
+    let apiCooldownUntil = 0;
     const tick = async () => {
-      if (!active() || this.busy || !session.pending().length) return;
+      if (!active() || this.busy || !session.pending().length || performance.now() < apiCooldownUntil) return;
       this.busy = true;
       try {
         if (
@@ -490,10 +500,12 @@ export class Engine {
           this.cleanup();
           return;
         }
+        const observedRevision = apiRevision;
         const observedBatch = new Map(
           session.pending().map((hint) => [hint.id, JSON.stringify(hint)]),
         );
         const batchCurrent = () =>
+          apiRevision === observedRevision &&
           session.pending().length === observedBatch.size &&
           !session
             .pending()
@@ -506,56 +518,59 @@ export class Engine {
           deployment: Deployment;
         }[] = [];
         let incomplete = false;
-        // Resolve this whole observed batch before ordering it by actual transaction position.
-        for (const hint of session.pending()) {
-          if (!active()) return;
-          this.state = {
-            phase: "validating",
-            launchNumber: hint.launchNumber,
-            detail: "自动读取官方部署资料并核对真实主网池子",
-          };
+        // Resolve every observed candidate before ordering by chain position. The
+        // bounded workers never claim/sign and all finish before results apply.
+        const hints = session.pending();
+        this.state = { phase: "validating", detail: "并行核对官方发行资料与真实主网池子" };
+        const results = await mapBounded(hints, 2, async (hint) => {
+          if (!active()) throw Error("启动已取消");
           try {
-            const result = await this.api.resolve(hint.id, client, {
-              signal: controller.signal,
-            });
-            if (!active()) return;
+            const cooldownRemaining = Math.ceil(apiCooldownUntil - performance.now());
+            if (cooldownRemaining > 0)
+              throw new ApiLaunchError("api_unavailable", "官方 API 要求冷却，保留候选等待", true, cooldownRemaining);
+            const result = preparation
+              ? await preparation.prepare(hint.id)
+              : await this.api.resolve(hint.id, client, { signal: controller.signal });
             if (
               result.deployment.chainId !== 1 ||
               result.candidate.launchNumber !== hint.launchNumber ||
-              (hint.token &&
-                hint.token.toLowerCase() !==
-                  result.candidate.token.toLowerCase())
-            )
-              throw new ApiLaunchError(
-                "metadata_mismatch",
-                "API 列表和详情的代币或发射编号不一致",
-                false,
-              );
-            resolved.push({ id: hint.id, ...result });
-            waitingSince.delete(hint.id);
+              (hint.token && hint.token.toLowerCase() !== result.candidate.token.toLowerCase())
+            ) throw new ApiLaunchError("metadata_mismatch", "API 列表和详情的代币或发射编号不一致", false);
+            return { id: hint.id, ...result };
           } catch (error) {
-            if (!active()) return;
+            // A response can contain both bad identity evidence and a server
+            // cooldown. Preserve the cooldown immediately, even if a newer
+            // API revision will discard this candidate batch afterwards.
+            if (error instanceof ApiLaunchError && error.retryAfterMs !== null)
+              apiCooldownUntil = Math.max(apiCooldownUntil, Math.min(Number.MAX_SAFE_INTEGER, performance.now() + error.retryAfterMs));
+            throw error;
+          }
+        });
+        if (!active() || apiRevision !== observedRevision) return;
+        for (let index = 0; index < hints.length; index++) {
+          const hint = hints[index]!;
+          const result = results[index]!;
+          if (result.status === "fulfilled") {
+            resolved.push(result.value);
+            waitingSince.delete(hint.id);
+          } else {
+            const error = result.reason;
             if (error instanceof ApiLaunchError && !error.retryable) {
+              // A poll may have changed this row while resolution was running.
+              // Never persist a decision about a different observed revision.
+              if (session.pending().some(row => row.id === hint.id && JSON.stringify(row) !== observedBatch.get(hint.id))) return;
               session.finish(hint.id, error.message);
               observedBatch.delete(hint.id);
-              this.log("rejected", {
-                launchNumber: hint.launchNumber,
-                reason: error.message,
-              });
+              this.log("rejected", { launchNumber: hint.launchNumber, reason: error.message });
             } else {
-              if (!waitingSince.has(hint.id))
-                waitingSince.set(hint.id, Date.now());
-              if (Date.now() - waitingSince.get(hint.id)! >= 120_000)
-                throw Error("首个 API 候选的资料等待超时");
+              if (!waitingSince.has(hint.id)) waitingSince.set(hint.id, Date.now());
+              if (Date.now() - waitingSince.get(hint.id)! >= 120_000) throw Error("首个 API 候选的资料等待超时");
               incomplete = true;
-              this.log("api_waiting", {
-                launchNumber: hint.launchNumber,
-                detail: "部署详情或链上回执尚未同步，保留候选重试",
-              });
+              this.log("api_waiting", { launchNumber: hint.launchNumber, detail: "部署详情或链上回执尚未同步，保留候选重试" });
             }
           }
         }
-        if (incomplete || !active()) return;
+        if (incomplete || !active() || performance.now() < apiCooldownUntil) return;
         resolved.sort((a, b) =>
           a.candidate.blockNumber < b.candidate.blockNumber
             ? -1
@@ -595,6 +610,7 @@ export class Engine {
           }
           await this.handle(candidate, client, deployment, {
             isCurrent: batchCurrent,
+            refresh: refreshSnapshot,
           });
           // If a process exits before handle claims its journal, the pending candidate remains.
           // Once claimed, the durable journal prevents a second buy even before this write.
@@ -628,61 +644,110 @@ export class Engine {
         if (!this.running) this.journal?.close();
       }
     };
-    let pollTimer: NodeJS.Timeout | undefined;
+    let cancelPoll: (() => void) | undefined;
     let failures = 0;
-    const poll = async () => {
-      if (!active()) return;
-      let delay = this.settings.pollIntervalMs;
-      try {
+    let polling = false;
+    let wakeRequested = false;
+    let lastPollStarted = performance.now();
+    let snapshotInFlight: Promise<void> | undefined;
+    // Polling and final execution validation share one producer. A slow HTTP
+    // request is joined rather than duplicated; only a durable complete
+    // snapshot can advance the evidence used by a pending transaction.
+    const refreshSnapshot = (): Promise<void> => {
+      if (snapshotInFlight) return snapshotInFlight;
+      if (performance.now() < apiCooldownUntil) return Promise.reject(Error("API 正在限流退避"));
+      snapshotInFlight = (async () => {
         const next = await this.api.snapshot(controller.signal);
-        if (!active()) return;
+        if (!active()) throw Error("启动已取消");
+        const previous = JSON.stringify(session.pending());
         try {
           session.enqueue(next);
-        } catch {
-          // We have seen new information but cannot durably retain it. Treating
-          // this as a network retry would let an older in-flight batch buy.
-          this.state = {
-            phase: "failed",
-            reason: "新发行记录无法保存，已停止交易；先修复本地记录再启动",
-          };
-          this.monitor = {
-            ...this.monitor,
-            status: "error",
-            detail: String(this.state.reason),
-          };
+          if (JSON.stringify(session.pending()) !== previous) {
+            apiRevision++;
+            preparation?.clear();
+          }
+        }
+        catch {
+          this.state = { phase: "failed", reason: "新发行记录无法保存，已停止交易；先修复本地记录再启动" };
+          this.monitor = { ...this.monitor, status: "error", detail: String(this.state.reason) };
           this.log("execution_stopped", { detail: this.state.reason });
           this.cleanup(!this.busy);
-          return;
+          throw Error("API progress persistence failed");
         }
         this.applyApiSnapshot(next);
+      })().catch(error => {
+        if (error instanceof ApiHttpError && error.retryable) {
+          preparation?.defer(Math.max(5000, error.retryAfterMs ?? 5000));
+          apiCooldownUntil = Math.max(apiCooldownUntil, Math.min(Number.MAX_SAFE_INTEGER, performance.now() + Math.max(5000, error.retryAfterMs ?? 5000)));
+        }
+        throw error;
+      }).finally(() => { snapshotInFlight = undefined; });
+      return snapshotInFlight;
+    };
+    const schedulePoll = (delay: number) => {
+      cancelPoll?.();
+      cancelPoll = scheduleAfter(Math.ceil(Math.max(delay, apiCooldownUntil - performance.now(), 0)), () => void poll());
+    };
+    const poll = async () => {
+      if (!active() || polling) return;
+      if (performance.now() < apiCooldownUntil) { schedulePoll(0); return; }
+      polling = true;
+      lastPollStarted = performance.now();
+      let delay = this.settings.pollIntervalMs;
+      try {
+        await refreshSnapshot();
+        if (!active()) return;
         failures = 0;
-        delay = Math.max(delay, (next.cacheMaxAgeSeconds ?? 0) * 1000);
         void tick();
       } catch {
         if (active()) {
           failures++;
           delay = Math.min(60000, delay * 2 ** Math.min(failures, 5));
-          this.log("api_error", {
-            detail: "官方 API 读取失败，保留已有候选并退避重试",
-          });
+          this.log("api_error", { detail: "官方 API 读取失败，保留已有候选并退避重试" });
         }
       } finally {
-        if (active()) pollTimer = setTimeout(() => void poll(), delay);
+        polling = false;
+        if (active()) {
+          const durationMs = performance.now() - lastPollStarted;
+          this.log("api_poll_timing", { durationMs, intervalMs: this.settings.pollIntervalMs, failures });
+          schedulePoll(failures ? delay : wakeRequested ? 100 : pollDelay(this.settings.pollIntervalMs, durationMs));
+          wakeRequested = false;
+        }
       }
     };
-    this.stops.push(() => {
-      if (pollTimer) clearTimeout(pollTimer);
-    });
-    pollTimer = setTimeout(
-      () => void poll(),
-      Math.max(
-        this.settings.pollIntervalMs,
-        (snapshot.cacheMaxAgeSeconds ?? 0) * 1000,
-      ),
-    );
-    this.timer = setInterval(() => void tick(), 3000);
+    this.wakeApiPoll = () => {
+      if (!active()) return;
+      if (polling) wakeRequested = true;
+      else schedulePoll(100);
+    };
+    this.stops.push(() => { cancelPoll?.(); this.wakeApiPoll = undefined; });
+    schedulePoll(this.settings.pollIntervalMs);
+    // A reviewed mainnet manifest may provide faster registry hints. Signals
+    // only wake the existing producer; API identity/canonical ordering still
+    // authorizes execution. No testnet address is promoted to mainnet here.
+    try {
+      const manifest = loadDeployment();
+      if (manifest && this.settings.rpcHttpUrls.length >= 2) {
+        const signals = startChainSignals({
+          chainId: 1, client: this.client(this.settings.rpcHttpUrls[0]), peer: this.client(this.settings.rpcHttpUrls[1]),
+          registries: manifest.registries.map(registry => ({ address: asAddress(registry.address), codeHash: registry.codeHash as Hex })),
+          startAfter: { number: head.number, hash: head.hash }, wsUrls: this.settings.rpcWsUrls,
+          signal: controller.signal,
+          onSignal: event => {
+            if (!active()) return;
+            this.log("chain_launch_hint", { source: event.source, launchNumber: event.launchNumber, blockNumber: event.blockNumber.toString(), canonical: event.canonical, removed: event.removed });
+            this.wakeApiPoll?.();
+          },
+          onEvent: (event, details) => { if (active()) this.log(event, details); },
+        });
+        this.stops.push(() => { void signals.stop().catch(() => {}); });
+        void signals.ready.catch(() => { if (active()) this.log("chain_hints_unavailable", { detail: "登记合约或节点校验未通过，API 监控继续运行" }); });
+      } else this.log("chain_hints_unavailable", { detail: "尚无已核实的主网登记合约与双节点配置，继续使用 API" });
+    } catch { this.log("chain_hints_unavailable", { detail: "主网链上提示配置不可用，API 监控继续运行" }); }
+    this.timer = setInterval(() => void tick(), 1000);
     void tick();
   }
+
   async start(mode: "dry-run" | "live") {
     if (this.running || this.starting || this.stopping || this.busy)
       throw Error("已有任务运行或正在结束");
@@ -941,7 +1006,7 @@ export class Engine {
     candidate: Candidate,
     client: PublicClient,
     deployment: Deployment,
-    apiEvidence?: { isCurrent?: () => boolean },
+    apiEvidence?: { isCurrent?: () => boolean; refresh?: () => Promise<void> },
   ) {
     if (poolId(candidate.pool) !== candidate.poolId)
       throw Error("Pool ID invalid");
@@ -961,16 +1026,12 @@ export class Engine {
       return;
     }
     if (!this.running) return;
-    const launchBlock = await client.getBlock({
-      blockNumber: candidate.blockNumber,
-    });
+    const initialReads = new StageBlockReads();
+    const [launchBlock] = await settleChecks([
+      initialReads.block(client, candidate.blockNumber),
+      apiEvidence ? this.verifyApiEvidence(candidate, client, deployment, initialReads) : Promise.resolve(),
+    ] as const);
     if (launchBlock.hash !== candidate.blockHash) throw Error("Launch reorged");
-    if (apiEvidence)
-      await this.verifyApiEvidence(
-        candidate,
-        client,
-        deployment,
-      );
     if (!this.running) return;
     if (candidate.blockNumber <= this.activationHead) {
       const reason = `启动前区块 ${candidate.blockNumber} 已有首个符合条件的发行；已错过，停止且不追买`;
@@ -1012,10 +1073,10 @@ export class Engine {
       const account =
         this.mode === "live" ? this.runAccount : undefined;
       // Pin quote to canonical state; no zero-minimum-output shortcuts.
-      const block = await client.getBlock();
-      const launchBlock = await client.getBlock({
-        blockNumber: candidate.blockNumber,
-      });
+      const quoteReads = new StageBlockReads();
+      const [block, launchBlock] = await settleChecks([
+        quoteReads.block(client), quoteReads.block(client, candidate.blockNumber),
+      ] as const);
       if (launchBlock.hash !== candidate.blockHash)
         throw Error("Launch reorged");
       // Initial IMD liquidity can be out of range at the opening tick. A zero active
@@ -1059,48 +1120,45 @@ export class Engine {
         this.cleanup();
         return;
       }
-      const [nonce, pending, balance, gas] = await Promise.all([
-        client.getTransactionCount({
-          address: account.address,
-          blockTag: "latest",
-        }),
-        client.getTransactionCount({
-          address: account.address,
-          blockTag: "pending",
-        }),
-        client.getBalance({ address: account.address }),
-        client.estimateGas({
-          account: account.address,
-          to: asAddress(deployment.router.address),
-          data,
-          value,
-        }),
-      ]);
-      if (nonce !== pending) throw Error("钱包有未完成交易，请使用独立钱包");
+      const [gas, history] = await settleChecks([
+        client.estimateGas({ account: account.address, to: asAddress(deployment.router.address), data, value }),
+        c.feeStrategy === "competitive"
+          ? Promise.resolve().then(() => client.getFeeHistory({ blockCount: 5, rewardPercentiles: [75], blockTag: "latest" })).catch(() => undefined)
+          : Promise.resolve(undefined),
+      ] as const);
       const gasLimit = (gas * 120n) / 100n;
-      const maxFeePerGas = parseGwei(c.maxFeeGwei),
-        maxPriorityFeePerGas = parseGwei(c.priorityFeeGwei);
-      if ((block.baseFeePerGas ?? 0n) + maxPriorityFeePerGas > maxFeePerGas)
-        throw Error("Gas 单价上限低于当前基础费加优先费");
+      const maxFeePerGas = parseGwei(c.maxFeeGwei);
       const worstGas = gasLimit * maxFeePerGas;
-      if (worstGas > parseEther(c.maxGasEth))
-        throw Error("最坏 Gas 费用超过设置上限");
-      if (balance < value + worstGas)
-        throw Error("余额不足以覆盖买入和最高 Gas");
-      if (
-        (await client.getBlock({ blockNumber: candidate.blockNumber })).hash !==
-        candidate.blockHash
-      )
-        throw Error("发币区块发生重组");
-      if (apiEvidence)
-        await this.verifyApiEvidence(
-          candidate,
-          client,
-          deployment,
-        );
+      if (worstGas > parseEther(c.maxGasEth)) throw Error("最坏 Gas 费用超过设置上限");
+      // Resolve the slow API/protocol work before the final volatile checks.
+      // refresh joins the polling producer and retains withdrawal/order guards.
+      await apiEvidence?.refresh?.();
+      if (apiEvidence) await this.verifyApiEvidence(candidate, client, deployment, new StageBlockReads());
       if (!this.running) throw Error("监听已停止");
-      if (apiEvidence?.isCurrent && !apiEvidence.isCurrent())
-        throw Error("候选记录在交易准备期间改变，已停止");
+      if (apiEvidence?.isCurrent && !apiEvidence.isCurrent()) throw Error("候选记录在交易准备期间改变，已停止");
+      const finalReads = new StageBlockReads();
+      const [finalHead, finalLaunch, finalQuote, nonce, pending, balance, chainId] = await settleChecks([
+        finalReads.block(client),
+        finalReads.block(client, candidate.blockNumber),
+        finalReads.block(client, block.number),
+        client.getTransactionCount({ address: account.address, blockTag: "latest" }),
+        client.getTransactionCount({ address: account.address, blockTag: "pending" }),
+        client.getBalance({ address: account.address }),
+        client.getChainId(),
+      ] as const);
+      if (chainId !== 1) throw Error("交易网络发生变化");
+      if (finalLaunch.hash !== candidate.blockHash || finalQuote.hash !== block.hash) throw Error("发币或报价区块发生重组");
+      if (finalHead.number < block.number || finalHead.timestamp >= block.timestamp + BigInt(c.deadlineSeconds)) throw Error("报价已过期");
+      if (nonce !== pending) throw Error("钱包有未完成交易，请使用独立钱包");
+      if (balance < value + worstGas) throw Error("余额不足以覆盖买入和最高 Gas");
+      const fee = selectPriorityFee({
+        strategy: c.feeStrategy, priorityCapWei: parseGwei(c.priorityFeeGwei), maxFeePerGas,
+        baseFeePerGas: finalHead.baseFeePerGas ?? 0n, reward: history?.reward, gasUsedRatio: history?.gasUsedRatio,
+      });
+      const maxPriorityFeePerGas = fee.maxPriorityFeePerGas;
+      this.log("fee_selected", { strategy: c.feeStrategy, source: fee.source, priorityWei: maxPriorityFeePerGas.toString(), capped: fee.capped });
+      if (!this.running) throw Error("监听已停止");
+      if (apiEvidence?.isCurrent && !apiEvidence.isCurrent()) throw Error("候选记录在最终核验期间改变，已停止");
       const raw = await account.signTransaction({
         chainId: 1,
         type: "eip1559",
@@ -1190,11 +1248,13 @@ export class Engine {
     candidate: Candidate,
     client: PublicClient,
     deployment: Deployment,
+    reads: StageBlockReads,
   ) {
     if (this.settings.discoverySource !== "api" || deployment.chainId !== 1)
       throw Error("API evidence outside mode");
     const protocol = trustedUniswap();
-    await Promise.all(
+    const block = await reads.block(client);
+    await settleChecks(
       Object.entries(protocol).map(async ([role, contract]) => {
         const supplied = deployment[role as keyof typeof protocol];
         if (
@@ -1202,7 +1262,7 @@ export class Engine {
           supplied.codeHash.toLowerCase() !== contract.codeHash
         )
           throw Error("Untrusted router protocol");
-        const code = await client.getCode({ address: contract.address });
+        const code = await client.getCode({ address: contract.address, blockNumber: block.number });
         if (!code || code === "0x" || keccak256(code) !== contract.codeHash)
           throw Error("Protocol code changed");
       }),

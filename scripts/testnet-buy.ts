@@ -23,6 +23,7 @@ import {
 } from "./testnet-policy.js";
 import { validateContinuousLaunchAge, validateContinuousMonitor, validateFreshLiveSet, validateFreshObservation, type FreshObservation } from "./testnet-fresh-policy.js";
 import { settleChecks, StageBlockReads, TestnetProtocolVerifier, validateActionAge } from "./testnet-execution-cache.js";
+import { chooseTestnetFees } from "./testnet-fees.js";
 
 export type TestnetBuyContext = {
   resolvedLaunch?: ResolvedApiLaunch<11155111>;
@@ -429,8 +430,9 @@ async function main(args: string[]) {
     const clients = makeClients();
     const client = clients[0]!;
     setStage("rpc_chain_verification");
-    await checkChains(clients);
-    const balance = await client.getBalance({ address: account.address });
+    const [, balance] = await settleChecks([
+      checkChains(clients), client.getBalance({ address: account.address }),
+    ] as const);
     output({
       network: "Ethereum Sepolia", chainId: TESTNET_CHAIN_ID, wallet: account.address,
       balanceEth: formatEther(balance), journal: journal.state,
@@ -488,17 +490,22 @@ async function main(args: string[]) {
     if (balance <= TESTNET_BUY_WEI) throw new Error("insufficient_testnet_balance");
     setStage("gas_and_balance_checks");
     const data = encodeBuy(resolved.candidate.pool, TESTNET_BUY_WEI, minimumOutput, block.timestamp + 180n);
-    const [gasEstimate, fees, nonce, pendingNonce, currentBalance] = await settleChecks([
+    const [gasEstimate, nodeFees, nonce, pendingNonce, currentBalance, , feeHistory] = await settleChecks([
       client.estimateGas({ account: account.address, to: protocol.router.address, data, value: TESTNET_BUY_WEI }),
       client.estimateFeesPerGas(),
       client.getTransactionCount({ address: account.address, blockTag: "latest" }),
       client.getTransactionCount({ address: account.address, blockTag: "pending" }),
       client.getBalance({ address: account.address }),
       observation ? checkFreshApi(observation, attempt, "before_claim") : Promise.resolve(),
+      client.getFeeHistory({ blockCount: 5, rewardPercentiles: [75], blockTag: "latest" }).catch(() => undefined),
     ]);
+    const gasLimit = (gasEstimate * 120n + 99n) / 100n;
+    const fees = chooseTestnetFees({ gasLimit, baseFeePerGas: block.baseFeePerGas ?? 0n, nodeFees, history: feeHistory });
+    output({ feeSelection: { source: fees.source, capped: fees.capped, maxFeePerGasWei: String(fees.maxFeePerGas),
+      maxPriorityFeePerGasWei: String(fees.maxPriorityFeePerGas), gasLimit: String(gasLimit), maxGasEth: formatEther(TESTNET_MAX_GAS_WEI) } });
     const transaction: TestnetTransaction = {
       chainId: TESTNET_CHAIN_ID, to: protocol.router.address, data, value: TESTNET_BUY_WEI,
-      nonce, gas: (gasEstimate * 120n + 99n) / 100n,
+      nonce, gas: gasLimit,
       maxFeePerGas: fees.maxFeePerGas, maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
     };
     checkTestnetBudget(transaction, currentBalance, pendingNonce);

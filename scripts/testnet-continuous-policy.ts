@@ -19,3 +19,17 @@ export function journalConsumesAttempt(input: unknown): boolean {
     throw Error("fatal_execution_journal_invalid");
   return phase !== "idle";
 }
+
+/** Persist the entire server cooldown, or fail closed before any deadline write.
+ * Four-digit ISO years are required by the durable monitor-state schema.
+ */
+export function safeRetryDeadline(delayMs: number, nowMs: number): string {
+  const fail = () => { throw Error("fatal_api_cooldown_unrepresentable"); };
+  if (!Number.isSafeInteger(delayMs) || delayMs < 0 || !Number.isSafeInteger(nowMs)) return fail();
+  const earliest = -62_167_219_200_000n; // 0000-01-01T00:00:00.000Z
+  const latest = 253_402_300_799_999n; // 9999-12-31T23:59:59.999Z
+  const now = BigInt(nowMs);
+  const deadline = now + BigInt(delayMs);
+  if (now < earliest || now > latest || deadline > latest) return fail();
+  return new Date(Number(deadline)).toISOString();
+}

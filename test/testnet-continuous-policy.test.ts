@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { attemptConsumed, journalConsumesAttempt, recentLaunch, retryDelay } from "../scripts/testnet-continuous-policy.js";
+import { attemptConsumed, journalConsumesAttempt, recentLaunch, retryDelay, safeRetryDeadline } from "../scripts/testnet-continuous-policy.js";
 test("continuous monitoring never makes an overnight launch fresh after reconnect", () => {
   const now = 1000000;
   assert.equal(recentLaunch(950n, 990n, now), true);
@@ -25,4 +25,33 @@ test("an idle status journal preserves the budget; all transaction phases and in
     assert.equal(journalConsumesAttempt({ phase }), true);
   for (const value of [null, {}, { phase: "unknown" }, "idle"])
     assert.throws(() => journalConsumesAttempt(value), /fatal_execution_journal_invalid/);
+});
+
+test("durable API retry deadlines preserve milliseconds and legal long cooldowns", () => {
+  const now = Date.parse("2026-10-01T12:34:56.789Z");
+  assert.equal(safeRetryDeadline(0, now), "2026-10-01T12:34:56.789Z");
+  assert.equal(safeRetryDeadline(5000, now), "2026-10-01T12:35:01.789Z");
+  const fortyDays = 40 * 24 * 60 * 60 * 1000;
+  const result = safeRetryDeadline(fortyDays, now);
+  assert.equal(result, "2026-11-10T12:34:56.789Z");
+  assert.equal(Date.parse(result) - now, fortyDays);
+  assert.equal(result.length, 24);
+});
+
+test("durable API retry deadlines accept the exact four-digit ISO ceiling and reject one millisecond more", () => {
+  const latest = Date.parse("9999-12-31T23:59:59.999Z");
+  assert.equal(safeRetryDeadline(1, latest - 1), "9999-12-31T23:59:59.999Z");
+  assert.equal(safeRetryDeadline(0, latest), "9999-12-31T23:59:59.999Z");
+  assert.throws(() => safeRetryDeadline(1, latest), /^Error: fatal_api_cooldown_unrepresentable$/);
+  assert.throws(() => safeRetryDeadline(0, latest + 1), /^Error: fatal_api_cooldown_unrepresentable$/);
+  assert.equal(safeRetryDeadline(0, Date.parse("0000-01-01T00:00:00.000Z")), "0000-01-01T00:00:00.000Z");
+  assert.throws(() => safeRetryDeadline(0, Date.parse("0000-01-01T00:00:00.000Z") - 1), /fatal_api_cooldown_unrepresentable/);
+});
+
+test("unsafe, fractional, negative and unrepresentable retry deadlines fail with a durable fatal code", () => {
+  const now = Date.parse("2026-10-01T00:00:00.000Z");
+  for (const delay of [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER + 1, Infinity, NaN, -1, 0.5, "5000" as unknown as number])
+    assert.throws(() => safeRetryDeadline(delay, now), /^Error: fatal_api_cooldown_unrepresentable$/);
+  for (const invalidNow of [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER + 1, Number.MIN_SAFE_INTEGER, Infinity, -Infinity, NaN, now + 0.5, null as unknown as number])
+    assert.throws(() => safeRetryDeadline(5000, invalidNow), /^Error: fatal_api_cooldown_unrepresentable$/);
 });

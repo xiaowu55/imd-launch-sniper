@@ -262,7 +262,7 @@
                         </div>
                         <small>每单位 Gas 最高愿付价格</small></label
                       ><label class="field"
-                        ><span>优先费</span>
+                        ><span>优先费上限</span>
                         <div class="input-unit">
                           <input
                             id="priorityFeeGwei"
@@ -274,7 +274,14 @@
                             required
                           /><span>Gwei</span>
                         </div>
-                        <small>影响打包优先级，不能保证抢先</small></label
+                        <small>动态策略在此上限内选择；固定策略使用此数值</small></label
+                      ><label class="field"
+                        ><span>优先费策略</span>
+                        <select id="feeStrategy" name="feeStrategy">
+                          <option value="competitive">动态 · 参考近期区块</option>
+                          <option value="fixed">固定 · 使用优先费上限</option>
+                        </select>
+                        <small>参考近 5 块的优先费，不保证下一块收录；不会提高预算</small></label
                       ><label class="field"
                         ><span>单笔 Gas 总预算上限</span>
                         <div class="input-unit">
@@ -638,7 +645,7 @@
                             /><span>毫秒</span>
                           </div>
                           <small
-                            >用于后备查询；过短可能触发服务商限速</small
+                            >每轮启动的目标间隔；慢请求不重叠，限流时自动退避</small
                           ></label
                         >
                       </div>
